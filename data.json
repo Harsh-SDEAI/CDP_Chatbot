@@ -1,0 +1,174 @@
+[
+    {
+        "day": 1,
+        "events": [
+            {
+                "time": ["2:30 pm", "8:00 pm"],
+                "event": "Team arrival, Check-In & Registration, Team Photos"
+            },
+            {
+                "time": ["4:00 pm", "7:30 pm"],
+                "event": "Dinner"
+            },
+            {
+                "time": ["8:00 pm"],
+                "event": "Umpire Orientation"
+            },
+            {
+                "time": ["8:30 pm"],
+                "event": "Head Coach/Umpire Tournament Rules Meeting"
+            }
+        ]
+    },
+    {
+        "day": 2,
+        "events": [
+            {
+                "time": ["6:00 am", "8:30 am"],
+                "event": "Breakfast"
+            },
+            {
+                "time": ["8:45 am", "9:15 am"],
+                "event": "Fire Drill and Team Opening Ceremony Lineup"
+            },
+            {
+                "time": ["9:30 am"],
+                "event": "Opening Ceremony/Skills Competitions"
+            },
+            {
+                "time": ["12:00 pm", "3:30 pm"],
+                "event": "Lunch"
+            },
+            {
+                "time": ["3:30 pm", "5:30 pm", "7:30 pm"],
+                "event": "Game Times"
+            },
+            {
+                "time": ["4:30 pm", "9:00 pm"],
+                "event": "Dinner"
+            }
+        ]
+    },
+    {
+        "day": 4,
+        "events": [
+            {
+                "time": ["6:30 am", "9:30 am"],
+                "event": "Breakfast"
+            },
+            {
+                "time": ["9:00 am", "11:30 am", "2:00 pm", "4:30 pm", "7:00 pm"],
+                "event": "Game Times"
+            },
+            {
+                "time": ["11:00 am", "2:30 pm"],
+                "event": "Lunch"
+            },
+            {
+                "time": ["5:00 pm", "8:30 pm"],
+                "event": "Dinner"
+            }
+        ]
+    },
+    {
+        "day": 3,
+        "events": [
+            {
+                "time": ["6:30 am", "9:30 am"],
+                "event": "Breakfast"
+            },
+            {
+                "time": ["9:00 am", "11:30 am", "2:00 pm", "4:30 pm", "7:00 pm"],
+                "event": "Game Times"
+            },
+            {
+                "time": ["11:00 am", "2:30 pm"],
+                "event": "Lunch"
+            },
+            {
+                "time": ["5:00 pm", "8:30 pm"],
+                "event": "Dinner"
+            },
+            {
+                "time": ["7:00 pm", "8:30 pm"],
+                "event": "Tournament Seeding Meeting"
+            }
+        ]
+    },
+    {
+        "day": 5,
+        "events": [
+            {
+                "time": ["6:30 am", "9:30 am"],
+                "event": "Breakfast"
+            },
+            {
+                "time": ["9:00 am", "11:30 am", "2:00 pm", "4:30 pm", "7:00 pm"],
+                "event": "Single Elimination Tournament Game Times"
+            },
+            {
+                "time": ["11:00 am", "2:30 pm"],
+                "event": "Lunch"
+            },
+            {
+                "time": ["5:00 pm", "8:30 pm"],
+                "event": "Dinner"
+            }
+        ]
+    },
+    {
+        "day": 6,
+        "events": [
+            {
+                "time": ["6:30 am", "9:30 am"],
+                "event": "Breakfast"
+            },
+            {
+                "time": ["9:00 am", "12:00 pm"],
+                "event": "Sweet Sixteen, Elite Eight, Final Four"
+            },
+            {
+                "time": ["12:00 pm","3:00 pm"],
+                "event":"Elite Eight"
+            },
+            {
+                "time": ["3:00 pm"],
+                "event":"Final Four"
+            },
+
+            {
+                "time": ["11:00 am", "2:30 pm"],
+                "event": "Lunch"
+            },
+            {
+                "time": ["4:00 pm", "5:30 pm"],
+                "event": "Dinner"
+            },
+            {
+                "time": ["5:45 pm"],
+                "event": "Team Line up"
+            },
+            {
+                "time": ["6:00 pm"],
+                "event": "Closing Ceremony"
+            },
+            {
+                "time": ["9:00 pm"],
+                "event": "Fireworks"
+            },
+            {
+                "time": ["9:15 pm"],
+                "event": "Championship Game"
+            }
+        ]
+    },
+    {
+        "day": 7,
+        "events": [
+            {
+                "time": ["6:00 am", "9:00 am"],
+                "event": "Team Check-Out"
+            }
+        ]
+    }
+]

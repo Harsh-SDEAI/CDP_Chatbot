@@ -1,0 +1,33 @@
+<html>
+    <head>
+        <style>
+            df-messenger {
+             --df-messenger-bot-message: #e6b028;   /*#dEADEC9; */
+             --df-messenger-button-titlebar-color: #df9b56;
+             --df-messenger-chat-background-color: #FBF6F3;
+             --df-messenger-font-color: #FEFEFE;
+             --df-messenger-send-icon: #3d64d8;
+             --df-messenger-user-message: #479b3d;
+            }
+          </style>
+        
+    <body>
+        <h1>Hello , World!</h1>
+        <h2>This is  sample website created by me to see integration of our website with Dialogflow</h2>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <div>
+            <script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1"></script>
+            <df-messenger
+              chat-title="CDP buddy"
+              agent-id="00b0ab90-d303-4d4a-9d7f-8baef5940e3c"
+              language-code="en"
+              expand="true"
+              intent="Welcome"
+              chat-icon="https://img.icons8.com/?size=100&id=fCXVQMDVLz9q&format=png&color=000000"
+            ></df-messenger>
+        </div>
+        
+
+    </body>
+   
+</html>
