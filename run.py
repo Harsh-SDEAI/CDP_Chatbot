@@ -39,7 +39,6 @@ def handle_webhook():
         #case 2
         #Only day is given
         elif day!=None and time=="" and event =="":
-                print("Inside the condition")
                 list_of_event=get_events_day(day)       
                 result = " ".join(list_of_event)
                 return jsonify(formate_dialogflow_response(["Dear User,We found that ",result]))
@@ -47,7 +46,6 @@ def handle_webhook():
         #case 3
         #only event is givenN 
         elif event!=None and day=="" and time=="":
-            print("you are here")
             if event in common_events:
                  return jsonify(formate_dialogflow_response(["Dear User,We found that ",event," is on many days kindly mention day"]))
             result=get_events_event(event)      
@@ -59,7 +57,6 @@ def handle_webhook():
         #Day and time given
         elif x>0 and day!=None and event!=None:
             result=get_events_day_time(day,time)
-            print("conditioned ")
             if result:
                     return jsonify(formate_dialogflow_response(result))
 

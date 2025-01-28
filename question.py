@@ -3,6 +3,7 @@ import json
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+
 #This function will recive a question and return a list (consist of string) question having same meaning
 stop_words = set(stopwords.words('english'))
 def preprocess(text):

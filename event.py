@@ -1,5 +1,5 @@
 import json
-from time_convert import convert_to_12hr_format
+from CDP_Chatbot.time_convert import convert_to_12hr_format
 import datetime
 from datetime import datetime
 
@@ -107,10 +107,6 @@ def get_time_for_event_on_day(day, event_name):
                         responses.append(time)
                         print(responses)
                         print(type(responses))
-                    
-                    #time_range = " to ".join(event_times)  # Combine times to form a range
-                    #response = f"{event_name} will be from {time_range}"
-                    #responses.append(response)  # Append to the list
     
     # If no events are found, return the custom message in a list
     if not responses:
