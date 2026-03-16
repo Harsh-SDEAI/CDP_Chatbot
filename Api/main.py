@@ -17,7 +17,7 @@ from openai import OpenAI
 # ── pip install docling faiss-cpu openai
 from docling.document_converter import DocumentConverter, PdfFormatOption, ImageFormatOption
 from docling.datamodel.base_models import InputFormat
-from docling.datamodel.pipeline_options import PdfPipelineOptions
+from docling.datamodel.pipeline_options import PdfPipelineOptions, EasyOcrOptions
 import faiss
 
 app = FastAPI(title="Admin Content Manager API")
@@ -505,6 +505,7 @@ def image_to_docling(img_path: Path, file_id: str, filename: str):
     print(f"[Docling] Starting image OCR extraction for {file_id}...")
     pipeline_options = PdfPipelineOptions()
     pipeline_options.do_ocr = True
+    pipeline_options.ocr_options = EasyOcrOptions()
     pipeline_options.do_table_structure = True
     pipeline_options.images_scale = 2.0
 
@@ -525,6 +526,7 @@ def pdf_to_docling(pdf_path: Path, file_id: str, filename: str):
     print(f"[Docling] Starting full OCR extraction for {file_id}...")
     pipeline_options = PdfPipelineOptions()
     pipeline_options.do_ocr = True
+    pipeline_options.ocr_options = EasyOcrOptions()
     pipeline_options.do_table_structure = True
     pipeline_options.images_scale = 2.0
     pipeline_options.generate_picture_images = True
