@@ -6,12 +6,10 @@ import uuid
 
 st.set_page_config(page_title="CDP Admin", layout="wide")
 
-# Force light theme via config
 if "theme" not in st.session_state:
     st.session_state.theme = "light"
 
-ADMIN_API = st.sidebar.text_input("Admin API URL", value="http://localhost:8000")
-CHATBOT_API = st.sidebar.text_input("Chatbot API URL", value="http://localhost:8001")
+API_URL = st.sidebar.text_input("API URL", value="http://localhost:8000")
 
 st.sidebar.markdown("---")
 
@@ -26,36 +24,36 @@ st.sidebar.caption("CDP Chatbot Admin")
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
-def api_get(base_url, path):
+def api_get(path):
     try:
-        r = requests.get(f"{base_url}{path}", timeout=30)
+        r = requests.get(f"{API_URL}{path}", timeout=30)
         r.raise_for_status()
         return r.json(), None
     except Exception as e:
         return None, str(e)
 
 
-def api_post(base_url, path, json_body=None, files=None):
+def api_post(path, json_body=None, files=None):
     try:
-        r = requests.post(f"{base_url}{path}", json=json_body, files=files, timeout=60)
+        r = requests.post(f"{API_URL}{path}", json=json_body, files=files, timeout=60)
         r.raise_for_status()
         return r.json(), None
     except Exception as e:
         return None, str(e)
 
 
-def api_put(base_url, path, json_body):
+def api_put(path, json_body):
     try:
-        r = requests.put(f"{base_url}{path}", json=json_body, timeout=30)
+        r = requests.put(f"{API_URL}{path}", json=json_body, timeout=30)
         r.raise_for_status()
         return r.json(), None
     except Exception as e:
         return None, str(e)
 
 
-def api_delete(base_url, path):
+def api_delete(path):
     try:
-        r = requests.delete(f"{base_url}{path}", timeout=30)
+        r = requests.delete(f"{API_URL}{path}", timeout=30)
         r.raise_for_status()
         return r.json(), None
     except Exception as e:
@@ -67,7 +65,6 @@ def api_delete(base_url, path):
 if page == "Chat":
     st.title("CDP Chat")
 
-    # Session controls
     col1, col2, col3 = st.columns([2, 2, 1])
     with col1:
         userid = st.number_input("User ID", min_value=1, value=1, step=1)
@@ -88,7 +85,6 @@ if page == "Chat":
     if "chat_messages" not in st.session_state:
         st.session_state.chat_messages = []
 
-    # Display messages
     for msg in st.session_state.chat_messages:
         with st.chat_message(msg["role"]):
             if msg["role"] == "assistant":
@@ -98,7 +94,6 @@ if page == "Chat":
             else:
                 st.markdown(msg["content"])
 
-    # Chat input
     query = st.chat_input("Ask a question...")
     if query:
         st.session_state.chat_messages.append({"role": "user", "content": query})
@@ -108,7 +103,7 @@ if page == "Chat":
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 resp, err = api_post(
-                    CHATBOT_API, "/chat",
+                    "/chat",
                     json_body={"query": query, "userid": int(userid), "sessionid": session_id},
                 )
             if err:
@@ -132,12 +127,11 @@ elif page == "Content Management":
 
     tab_list, tab_upload, tab_scrape = st.tabs(["Files", "Upload", "Scrape URL"])
 
-    # --- File List ---
     with tab_list:
         if st.button("Refresh"):
             st.rerun()
 
-        files_resp, err = api_get(ADMIN_API, "/files")
+        files_resp, err = api_get("/files")
         if err:
             st.error(err)
         elif files_resp:
@@ -152,29 +146,27 @@ elif page == "Content Management":
                         c2.write(f"**Size:** {f['size_bytes']} bytes")
                         c3.write(f"**Pages:** {f.get('page_count', 'N/A')}")
 
-                        # View content inline
                         if st.button("View Content", key=f"view_{f['file_id']}"):
-                            content_resp, cerr = api_get(ADMIN_API, f"/content/{f['file_id']}")
+                            content_resp, cerr = api_get(f"/content/{f['file_id']}")
                             if cerr:
                                 st.error(cerr)
                             else:
                                 st.text_area("Content", value=content_resp.get("content", ""), height=300, key=f"content_{f['file_id']}")
 
                         if st.button("Delete", key=f"del_{f['file_id']}", type="secondary"):
-                            resp, derr = api_delete(ADMIN_API, f"/content/{f['file_id']}")
+                            resp, derr = api_delete(f"/content/{f['file_id']}")
                             if derr:
                                 st.error(derr)
                             else:
                                 st.success("Deleted")
                                 st.rerun()
 
-    # --- Upload ---
     with tab_upload:
         uploaded = st.file_uploader("Choose a file", type=["pdf", "txt", "md", "png", "jpg", "jpeg", "webp", "bmp", "tiff", "tif"])
         if uploaded and st.button("Upload"):
             with st.spinner("Uploading..."):
                 resp, err = api_post(
-                    ADMIN_API, "/upload",
+                    "/upload",
                     files={"file": (uploaded.name, uploaded.getvalue(), uploaded.type or "application/octet-stream")},
                 )
             if err:
@@ -182,12 +174,11 @@ elif page == "Content Management":
             else:
                 st.success(f"Uploaded: {resp.get('filename')} (ID: `{resp['file_id']}`)")
 
-    # --- Scrape ---
     with tab_scrape:
         url = st.text_input("URL to scrape")
         if url and st.button("Scrape"):
             with st.spinner("Scraping..."):
-                resp, err = api_post(ADMIN_API, "/scrape", json_body={"url": url})
+                resp, err = api_post("/scrape", json_body={"url": url})
             if err:
                 st.error(err)
             else:
@@ -199,7 +190,7 @@ elif page == "Content Management":
 elif page == "History":
     st.title("Chat History")
 
-    hist, err = api_get(CHATBOT_API, "/history")
+    hist, err = api_get("/history")
     if err:
         st.error(f"Failed to load: {err}")
     else:
@@ -226,38 +217,28 @@ elif page == "History":
 elif page == "Settings":
     st.title("Settings")
 
-    # Health
     st.subheader("API Status")
-    c1, c2 = st.columns(2)
-    with c1:
-        health, err = api_get(ADMIN_API, "/")
-        if err:
-            st.error(f"Admin API: Offline")
-        else:
-            st.success(f"Admin API: {health.get('message', 'OK')}")
-    with c2:
-        _, err = api_get(CHATBOT_API, "/history")
-        if err:
-            st.error("Chatbot API: Offline")
-        else:
-            st.success("Chatbot API: Online")
+    health, err = api_get("/")
+    if err:
+        st.error("API: Offline")
+    else:
+        st.success(f"API: {health.get('message', 'OK')}")
 
     st.markdown("---")
 
-    # Index stats + controls
     st.subheader("Index Controls")
 
-    stats, err = api_get(ADMIN_API, "/rag/index/stats")
+    stats, err = api_get("/rag/index/stats")
     if stats:
         c1, c2 = st.columns(2)
-        c1.metric("Vectors", stats["total_vectors"])
-        c2.metric("Documents", stats["total_documents"])
+        c1.metric("Admin Vectors", stats["total_vectors"])
+        c2.metric("Admin Documents", stats["total_documents"])
 
     col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("Rebuild Admin Index"):
             with st.spinner("Rebuilding..."):
-                resp, err = api_post(ADMIN_API, "/rag/index/rebuild")
+                resp, err = api_post("/rag/index/rebuild")
             if err:
                 st.error(err)
             else:
@@ -266,7 +247,7 @@ elif page == "Settings":
     with col2:
         if st.button("Rebuild Chatbot Index"):
             with st.spinner("Rebuilding..."):
-                resp, err = api_post(CHATBOT_API, "/update-index")
+                resp, err = api_post("/update-index")
             if err:
                 st.error(err)
             else:
@@ -275,7 +256,7 @@ elif page == "Settings":
     with col3:
         if st.button("Update All (KB + Index)", type="primary"):
             with st.spinner("Updating..."):
-                resp, err = api_post(CHATBOT_API, "/update-all")
+                resp, err = api_post("/update-all")
             if err:
                 st.error(err)
             else:
