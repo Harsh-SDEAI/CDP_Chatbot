@@ -516,9 +516,11 @@ def _build_pdf_pipeline():
 
 
 def pdf_to_docling(pdf_path: Path, file_id: str, filename: str):
-    import fitz  # PyMuPDF – already a transitive dep of docling
+    import fitz  # PyMuPDF
 
-    total_pages = len(fitz.open(str(pdf_path)))
+    doc = fitz.open(str(pdf_path))
+    total_pages = len(doc)
+    doc.close()
     print(f"[Docling] Starting OCR extraction for {file_id} ({total_pages} pages)...")
 
     if total_pages <= _PDF_CHUNK_SIZE:
@@ -561,9 +563,11 @@ def _convert_pdf_chunked(pdf_path: Path, file_id: str, filename: str, total_page
         tmp_pdf = fitz.open()
         tmp_pdf.insert_pdf(src, from_page=start, to_page=end - 1)
 
-        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-            tmp_pdf.save(tmp.name)
-            tmp_path = tmp.name
+        # On Windows, NamedTemporaryFile keeps the handle open → permission error.
+        # Create the path, close the handle, then save.
+        tmp_fd, tmp_path = tempfile.mkstemp(suffix=".pdf")
+        os.close(tmp_fd)
+        tmp_pdf.save(tmp_path)
         tmp_pdf.close()
         src.close()
 
@@ -577,9 +581,12 @@ def _convert_pdf_chunked(pdf_path: Path, file_id: str, filename: str, total_page
         all_md_parts.append(_docling_doc_to_markdown(doc_dict))
         all_doc_dicts.append(doc_dict)
 
-        os.remove(tmp_path)
         del converter, result
         gc.collect()
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass  # cleanup is best-effort
 
     print(f"[Docling] Extraction complete for {file_id}.")
 
