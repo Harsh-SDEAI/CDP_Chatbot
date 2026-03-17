@@ -9,7 +9,7 @@ import psycopg2
 DATABASE_URL = "postgresql://postgres:admin123@localhost:5432/CDP_ASSISTANT"
 
 # ── OpenAI ────────────────────────────────────────────────────────────────────
-OPENAI_API_KEY = ""  # paste your OpenAI key here
+OPENAI_API_KEY = "sk-proj-y_A46MbFd6itGK2iRlu8NwHr82H6BdWK4UnD-TrRHk1PnFfHJ4rMoGIE"
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 STORAGE_DIR = Path("storage")
