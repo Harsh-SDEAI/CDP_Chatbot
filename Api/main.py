@@ -267,6 +267,7 @@ def chat(request: ChatRequest):
     response = generate_response(request.query, request.sessionid, request.userid)
     end_time = time.time()
 
+    db = None
     try:
         db = get_db_connection()
         cursor = db.cursor()
@@ -276,9 +277,10 @@ def chat(request: ChatRequest):
         )
         db.commit()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database insert error: {e}")
+        print(f"[DB] Chat history insert failed: {e}")
     finally:
-        db.close()
+        if db:
+            db.close()
 
     return {"response": response, "time_taken": end_time - start_time}
 
@@ -322,6 +324,7 @@ def update_all():
 
 @app.get("/history")
 def get_history():
+    db = None
     try:
         db = get_db_connection()
         cursor = db.cursor()
@@ -343,7 +346,8 @@ def get_history():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database query error: {e}")
     finally:
-        db.close()
+        if db:
+            db.close()
 
     return {"conversation_history": history}
 
