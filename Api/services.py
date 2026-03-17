@@ -294,6 +294,38 @@ def _extract_pages(text_obj: Dict[str, Any]) -> set:
     return pages
 
 
+def _pymupdf_extract_image_text(pdf_path: Optional[Path], obj: Dict[str, Any]) -> str:
+    """Fallback: use PyMuPDF to extract text from the bounding box of a picture element."""
+    if pdf_path is None:
+        return ""
+    try:
+        import fitz
+        prov_list = obj.get("prov", [])
+        if not prov_list:
+            return ""
+        prov = prov_list[0]
+        page_no = prov.get("page_no")
+        bbox = prov.get("bbox")
+        if page_no is None or bbox is None:
+            return ""
+        doc = fitz.open(str(pdf_path))
+        # Docling uses 1-based page numbers
+        page = doc[int(page_no) - 1]
+        # bbox format from docling: {"l": left, "t": top, "r": right, "b": bottom}
+        rect = fitz.Rect(
+            float(bbox.get("l", 0)),
+            float(bbox.get("t", 0)),
+            float(bbox.get("r", 0)),
+            float(bbox.get("b", 0)),
+        )
+        text = page.get_text("text", clip=rect).strip()
+        doc.close()
+        return text
+    except Exception as e:
+        print(f"[Docling] PyMuPDF fallback failed for picture: {e}")
+        return ""
+
+
 def _clean_bullet(s: str) -> str:
     s = (s or "").lstrip()
     if not s:
@@ -325,7 +357,7 @@ def _format_checkbox(obj: Dict[str, Any], indent: int) -> str:
     return f"{pad}{box} {base}"
 
 
-def _docling_doc_to_markdown(doc_dict: Dict[str, Any]) -> str:
+def _docling_doc_to_markdown(doc_dict: Dict[str, Any], pdf_path: Optional[Path] = None) -> str:
     lines: List[str] = []
 
     def _render_table(table_obj):
@@ -408,13 +440,29 @@ def _docling_doc_to_markdown(doc_dict: Dict[str, Any]) -> str:
                     if not text:
                         continue
                     (captions if label in ("caption", "footnote") else ocr_texts).append(text)
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[Docling] Warning: failed to extract picture child: {e}")
+
+            # Fallback: use PyMuPDF to extract text from the picture's bounding box
+            if not ocr_texts:
+                fallback_text = _pymupdf_extract_image_text(pdf_path, obj)
+                if fallback_text:
+                    print(f"[Docling] PyMuPDF fallback extracted text from picture region")
+                    ocr_texts.append(fallback_text)
+
             parts = []
-            if captions:  parts.append("Caption: " + " ".join(captions))
-            if ocr_texts: parts.append("Image text: " + " ".join(ocr_texts))
-            if parts:
+            if captions:
+                parts.append("Caption: " + " ".join(captions))
+            if ocr_texts:
+                # Include image text as a proper content block, not just a note
+                lines.append("")
+                lines.append("**Image Content:**")
+                lines.append(" ".join(ocr_texts))
+                lines.append("")
+            if captions and not ocr_texts:
                 lines.append(f"*[Image — {' | '.join(parts)}]*")
+            elif not ocr_texts and not captions:
+                print(f"[Docling] Warning: picture element produced no text or caption")
 
     for child in doc_dict.get("body", {}).get("children", []):
         walk_ref(child["$ref"], indent=0)
@@ -423,7 +471,7 @@ def _docling_doc_to_markdown(doc_dict: Dict[str, Any]) -> str:
     return "\n".join(lines).strip()
 
 
-def _docling_doc_to_structured_json(doc_dict: Dict[str, Any], file_id: str, filename: str) -> Dict[str, Any]:
+def _docling_doc_to_structured_json(doc_dict: Dict[str, Any], file_id: str, filename: str, pdf_path: Optional[Path] = None) -> Dict[str, Any]:
     blocks: List[Dict[str, Any]] = []
 
     def walk_ref(ref: str, current_section: Optional[str] = None):
@@ -473,8 +521,15 @@ def _docling_doc_to_structured_json(doc_dict: Dict[str, Any], file_id: str, file
                         continue
                     p_pages.update(_extract_pages(t))
                     (captions if label in ("caption", "footnote") else ocr_texts).append(text)
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[Docling] Warning: failed to extract picture child in JSON: {e}")
+
+            # Fallback: use PyMuPDF to extract text from the picture's bounding box
+            if not ocr_texts:
+                fallback_text = _pymupdf_extract_image_text(pdf_path, obj)
+                if fallback_text:
+                    ocr_texts.append(fallback_text)
+
             if captions or ocr_texts:
                 blocks.append({"type": "picture", "captions": captions, "ocr_text": ocr_texts, "section": current_section, "pages": sorted(p_pages)})
 
@@ -529,7 +584,7 @@ def _build_pdf_pipeline():
     pipeline_options.do_ocr = True
     pipeline_options.ocr_options = EasyOcrOptions()
     pipeline_options.do_table_structure = True
-    pipeline_options.images_scale = 1.0          # was 2.0 – halves memory
+    pipeline_options.images_scale = 2.0          # higher scale for better OCR on images
     pipeline_options.generate_picture_images = True
     return pipeline_options
 
@@ -559,8 +614,8 @@ def _convert_pdf_single(pdf_path: Path, file_id: str, filename: str):
     doc_dict = result.document.export_to_dict()
     print(f"[Docling] Extraction complete for {file_id}.")
 
-    markdown = _docling_doc_to_markdown(doc_dict)
-    structured_json = _docling_doc_to_structured_json(doc_dict, file_id, filename)
+    markdown = _docling_doc_to_markdown(doc_dict, pdf_path=pdf_path)
+    structured_json = _docling_doc_to_structured_json(doc_dict, file_id, filename, pdf_path=pdf_path)
     structured_json["docling_raw"] = doc_dict
     return markdown, structured_json
 
@@ -597,7 +652,7 @@ def _convert_pdf_chunked(pdf_path: Path, file_id: str, filename: str, total_page
         result = converter.convert(tmp_path)
         doc_dict = result.document.export_to_dict()
 
-        all_md_parts.append(_docling_doc_to_markdown(doc_dict))
+        all_md_parts.append(_docling_doc_to_markdown(doc_dict, pdf_path=Path(tmp_path)))
         all_doc_dicts.append(doc_dict)
 
         del converter, result
@@ -611,7 +666,7 @@ def _convert_pdf_chunked(pdf_path: Path, file_id: str, filename: str, total_page
 
     markdown = "\n\n".join(all_md_parts)
     # Use the first chunk's dict as the base for structured JSON
-    structured_json = _docling_doc_to_structured_json(all_doc_dicts[0], file_id, filename)
+    structured_json = _docling_doc_to_structured_json(all_doc_dicts[0], file_id, filename, pdf_path=pdf_path)
     structured_json["docling_raw"] = all_doc_dicts
     return markdown, structured_json
 
