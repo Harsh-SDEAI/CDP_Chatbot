@@ -6,7 +6,7 @@ import re
 import psycopg2
 
 # ── Database ──────────────────────────────────────────────────────────────────
-DATABASE_URL = "postgresql://postgres:your_password@localhost:5432/CDP_ASSISTANT"
+DATABASE_URL = "postgresql://postgres:admin123@localhost:5432/CDP_ASSISTANT"
 
 # ── OpenAI ────────────────────────────────────────────────────────────────────
 OPENAI_API_KEY = ""  # paste your OpenAI key here
