@@ -625,6 +625,31 @@ def image_to_docling(img_path: Path, file_id: str, filename: str):
     return markdown, structured_json
 
 
+def docx_to_text(docx_path: Path, file_id: str, filename: str):
+    """Extract text from a Word (.docx) file using python-docx."""
+    from docx import Document as DocxDocument
+
+    print(f"[DOCX] Starting text extraction for {file_id}...")
+    doc = DocxDocument(str(docx_path))
+
+    paragraphs = []
+    for para in doc.paragraphs:
+        text = para.text.strip()
+        if text:
+            paragraphs.append(text)
+
+    # Also extract text from tables
+    for table in doc.tables:
+        for row in table.rows:
+            row_text = " | ".join(cell.text.strip() for cell in row.cells)
+            if row_text.strip(" |"):
+                paragraphs.append(row_text)
+
+    markdown = "\n\n".join(paragraphs)
+    print(f"[DOCX] Extraction complete for {file_id} ({len(paragraphs)} blocks).")
+    return markdown
+
+
 _PDF_CHUNK_SIZE = 10  # pages per batch – keeps peak RAM in check
 
 

@@ -23,7 +23,7 @@ from services import (
     # Storage
     save_file, save_text_file, load_file, save_meta, load_meta, save_json, make_file_id,
     # Document processing
-    html_to_markdown, pdf_to_docling, image_to_docling,
+    html_to_markdown, pdf_to_docling, image_to_docling, docx_to_text,
     # KB export
     export_qa_pairs_job,
     # Chatbot
@@ -120,7 +120,7 @@ async def upload_file(file: UploadFile = File(...)):
     filename = file.filename
     ext = Path(filename).suffix.lower()
     IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff", ".tif"}
-    ALLOWED_EXTS = {".pdf", ".txt", ".md"} | IMAGE_EXTS
+    ALLOWED_EXTS = {".pdf", ".txt", ".md", ".docx"} | IMAGE_EXTS
 
     if ext not in ALLOWED_EXTS:
         raise HTTPException(status_code=400, detail=f"Unsupported file type: {ext}")
@@ -153,6 +153,18 @@ async def upload_file(file: UploadFile = File(...)):
         json_path = save_json(file_id, structured_json)
         content = markdown
         extra = {"json_path": str(json_path), "txt_path": str(txt_path), "page_count": 1, "block_count": len(structured_json.get("blocks", []))}
+
+    elif ext == ".docx":
+        tmp_docx = STORAGE_DIR / f"{file_id}_tmp.docx"
+        tmp_docx.write_bytes(raw_content)
+        try:
+            markdown = docx_to_text(tmp_docx, file_id, filename)
+        finally:
+            tmp_docx.unlink(missing_ok=True)
+        save_file(file_id, markdown)
+        txt_path = save_text_file(file_id, markdown)
+        content = markdown
+        extra = {"txt_path": str(txt_path)}
 
     else:
         content = raw_content.decode("utf-8", errors="replace").strip()

@@ -162,7 +162,7 @@ elif page == "Content Management":
                                 st.rerun()
 
     with tab_upload:
-        uploaded = st.file_uploader("Choose a file", type=["pdf", "txt", "md", "png", "jpg", "jpeg", "webp", "bmp", "tiff", "tif"])
+        uploaded = st.file_uploader("Choose a file", type=["pdf", "txt", "md", "docx", "png", "jpg", "jpeg", "webp", "bmp", "tiff", "tif"])
         if uploaded and st.button("Upload"):
             with st.spinner("Uploading..."):
                 resp, err = api_post(
