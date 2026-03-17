@@ -192,6 +192,25 @@ def save_file(file_id: str, content: str) -> Path:
     return path
 
 
+def save_text_file(file_id: str, content: str) -> Path:
+    """Save a plain .txt copy of the extracted text for easy comparison."""
+    import re
+    # Strip markdown formatting: headings, bold, italic, links, images, code fences
+    text = content
+    text = re.sub(r"^#{1,6}\s+", "", text, flags=re.MULTILINE)  # headings
+    text = re.sub(r"!\[([^\]]*)\]\([^)]*\)", r"\1", text)       # images
+    text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)        # links
+    text = re.sub(r"```[^\n]*\n(.*?)```", r"\1", text, flags=re.DOTALL)  # code fences
+    text = re.sub(r"`([^`]+)`", r"\1", text)                    # inline code
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)                # bold
+    text = re.sub(r"\*(.+?)\*", r"\1", text)                    # italic
+    text = re.sub(r"^[>\-\*]\s+", "", text, flags=re.MULTILINE) # blockquote/list markers
+    text = re.sub(r"\n{3,}", "\n\n", text)                      # collapse blank lines
+    path = STORAGE_DIR / f"{file_id}.txt"
+    path.write_text(text.strip(), encoding="utf-8")
+    return path
+
+
 def load_file(file_id: str) -> str:
     path = STORAGE_DIR / f"{file_id}.md"
     if not path.exists():

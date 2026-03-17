@@ -21,7 +21,7 @@ from services import (
     load_admin_faiss, index_document, remove_document_from_index,
     search_index, get_admin_faiss_stats, rebuild_admin_faiss, rag_query,
     # Storage
-    save_file, load_file, save_meta, load_meta, save_json, make_file_id,
+    save_file, save_text_file, load_file, save_meta, load_meta, save_json, make_file_id,
     # Document processing
     html_to_markdown, pdf_to_docling, image_to_docling,
     # KB export
@@ -136,9 +136,10 @@ async def upload_file(file: UploadFile = File(...)):
         finally:
             tmp_pdf.unlink(missing_ok=True)
         save_file(file_id, markdown)
+        txt_path = save_text_file(file_id, markdown)
         json_path = save_json(file_id, structured_json)
         content = markdown
-        extra = {"json_path": str(json_path), "page_count": structured_json.get("page_count", 0), "block_count": len(structured_json.get("blocks", []))}
+        extra = {"json_path": str(json_path), "txt_path": str(txt_path), "page_count": structured_json.get("page_count", 0), "block_count": len(structured_json.get("blocks", []))}
 
     elif ext in IMAGE_EXTS:
         tmp_img = STORAGE_DIR / f"{file_id}_tmp{ext}"
@@ -148,9 +149,10 @@ async def upload_file(file: UploadFile = File(...)):
         finally:
             tmp_img.unlink(missing_ok=True)
         save_file(file_id, markdown)
+        txt_path = save_text_file(file_id, markdown)
         json_path = save_json(file_id, structured_json)
         content = markdown
-        extra = {"json_path": str(json_path), "page_count": 1, "block_count": len(structured_json.get("blocks", []))}
+        extra = {"json_path": str(json_path), "txt_path": str(txt_path), "page_count": 1, "block_count": len(structured_json.get("blocks", []))}
 
     else:
         content = raw_content.decode("utf-8", errors="replace").strip()
@@ -220,7 +222,7 @@ def delete_content(file_id: str):
         raise HTTPException(status_code=404, detail="File not found")
     md_path.unlink()
 
-    for p in [STORAGE_DIR / f"{file_id}.meta.json", STORAGE_DIR / f"{file_id}.json"]:
+    for p in [STORAGE_DIR / f"{file_id}.meta.json", STORAGE_DIR / f"{file_id}.json", STORAGE_DIR / f"{file_id}.txt"]:
         if p.exists():
             p.unlink()
 
