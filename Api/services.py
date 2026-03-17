@@ -547,8 +547,8 @@ def export_qa_pairs_job():
     cursor = conn.cursor()
 
     cursor.execute(
-        "SELECT ChatHistoryID, question, answer, status, suggestedanswer "
-        "FROM CDPChatHistory WHERE IsKBUpdated = 1 AND PublishStatus = 'ReadyToPublish'"
+        "SELECT id, Question, Answer, Status, SuggestedAnswer "
+        "FROM CDPChatHistory WHERE IsKBUpdated = TRUE AND PublishStatus = 'ReadyToPublish'"
     )
     rows = cursor.fetchall()
     if not rows:
@@ -591,8 +591,8 @@ def export_qa_pairs_job():
 
         current_file.write(pair_text)
         cursor.execute(
-            "UPDATE CDPChatHistory SET IsKBUpdated = 0, PublishStatus = 'Published' WHERE ChatHistoryID = ?",
-            chat_id,
+            "UPDATE CDPChatHistory SET IsKBUpdated = FALSE, PublishStatus = 'Published' WHERE id = %s",
+            (chat_id,),
         )
     conn.commit()
     current_file.close()

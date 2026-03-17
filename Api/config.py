@@ -1,27 +1,19 @@
 """
 Shared configuration, constants, and database helpers.
 """
-from dotenv import load_dotenv
 from pathlib import Path
-import os
 import re
-import pyodbc
-
-load_dotenv()
+import psycopg2
 
 # ── Database ──────────────────────────────────────────────────────────────────
-DB_SERVER = os.getenv("DB_SERVER", "")
-DB_DRIVER = os.getenv("DB_DRIVER", "")
-DB_NAME = os.getenv("DB_NAME", "")
-DB_USER = os.getenv("DB_USER", "")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DATABASE_URL = "postgresql://postgres:your_password@localhost:5432/CDP_ASSISTANT"
 
 # ── OpenAI ────────────────────────────────────────────────────────────────────
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENAI_API_KEY = ""  # paste your OpenAI key here
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
-TEXT_FOLDER = os.getenv("TEXT_FOLDER", r"D:\cdpgpt_enhancement\data")
-SAVE_PATH = os.getenv("SAVE_PATH", r"D:\cdpgpt_enhancement\data")
+TEXT_FOLDER = r"D:\cdpgpt_enhancement\data"
+SAVE_PATH = r"D:\cdpgpt_enhancement\data"
 
 STORAGE_DIR = Path("storage")
 STORAGE_DIR.mkdir(exist_ok=True)
@@ -45,12 +37,7 @@ EMBEDDING_DIM = 1536  # text-embedding-3-small
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def get_db_connection():
-    return pyodbc.connect(
-        f"DRIVER={DB_DRIVER};"
-        f"SERVER={DB_SERVER};"
-        f"DATABASE={DB_NAME};"
-        f"UID={DB_USER};PWD={DB_PASSWORD};"
-    )
+    return psycopg2.connect(DATABASE_URL)
 
 
 def clean_text(text):

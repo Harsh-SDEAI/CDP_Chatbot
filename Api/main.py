@@ -272,7 +272,7 @@ def chat(request: ChatRequest):
         db = get_db_connection()
         cursor = db.cursor()
         cursor.execute(
-            "INSERT INTO CDPChatHistory (SessionId, UserRegistrationId, Question, Answer) VALUES (?, ?, ?, ?)",
+            "INSERT INTO CDPChatHistory (SessionId, UserRegistrationId, Question, Answer) VALUES (%s, %s, %s, %s)",
             (request.sessionid, request.userid, request.query, response),
         )
         db.commit()
@@ -329,7 +329,7 @@ def get_history():
         db = get_db_connection()
         cursor = db.cursor()
         cursor.execute(
-            "SELECT SessionId, UserRegistraionId, Question, Answer, TimeStamp "
+            "SELECT SessionId, UserRegistrationId, Question, Answer, TimeStamp "
             "FROM CDPChatHistory ORDER BY id DESC"
         )
         rows = cursor.fetchall()
