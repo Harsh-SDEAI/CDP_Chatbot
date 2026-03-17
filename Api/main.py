@@ -215,6 +215,23 @@ def list_files():
     return {"files": files}
 
 
+@app.post("/generate-txt")
+def generate_txt_for_existing():
+    """Generate .txt files for all already-uploaded documents that don't have one yet."""
+    generated = []
+    skipped = []
+    for md_path in STORAGE_DIR.glob("*.md"):
+        file_id = md_path.stem
+        txt_path = STORAGE_DIR / f"{file_id}.txt"
+        if txt_path.exists():
+            skipped.append(file_id)
+            continue
+        content = md_path.read_text(encoding="utf-8")
+        save_text_file(file_id, content)
+        generated.append(file_id)
+    return {"generated": generated, "skipped": skipped}
+
+
 @app.delete("/content/{file_id}")
 def delete_content(file_id: str):
     md_path = STORAGE_DIR / f"{file_id}.md"
