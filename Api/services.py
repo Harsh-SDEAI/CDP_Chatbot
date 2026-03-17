@@ -502,15 +502,35 @@ def image_to_docling(img_path: Path, file_id: str, filename: str):
     return markdown, structured_json
 
 
-def pdf_to_docling(pdf_path: Path, file_id: str, filename: str):
-    print(f"[Docling] Starting full OCR extraction for {file_id}...")
+_PDF_CHUNK_SIZE = 10  # pages per batch – keeps peak RAM in check
+
+
+def _build_pdf_pipeline():
     pipeline_options = PdfPipelineOptions()
     pipeline_options.do_ocr = True
     pipeline_options.ocr_options = EasyOcrOptions()
     pipeline_options.do_table_structure = True
-    pipeline_options.images_scale = 2.0
+    pipeline_options.images_scale = 1.0          # was 2.0 – halves memory
     pipeline_options.generate_picture_images = True
+    return pipeline_options
 
+
+def pdf_to_docling(pdf_path: Path, file_id: str, filename: str):
+    import fitz  # PyMuPDF – already a transitive dep of docling
+
+    total_pages = len(fitz.open(str(pdf_path)))
+    print(f"[Docling] Starting OCR extraction for {file_id} ({total_pages} pages)...")
+
+    if total_pages <= _PDF_CHUNK_SIZE:
+        # Small PDF → single pass (original behaviour)
+        return _convert_pdf_single(pdf_path, file_id, filename)
+
+    # Large PDF → process in chunks of _PDF_CHUNK_SIZE pages
+    return _convert_pdf_chunked(pdf_path, file_id, filename, total_pages)
+
+
+def _convert_pdf_single(pdf_path: Path, file_id: str, filename: str):
+    pipeline_options = _build_pdf_pipeline()
     converter = DocumentConverter(
         format_options={"pdf": PdfFormatOption(pipeline_options=pipeline_options)}
     )
@@ -521,6 +541,52 @@ def pdf_to_docling(pdf_path: Path, file_id: str, filename: str):
     markdown = _docling_doc_to_markdown(doc_dict)
     structured_json = _docling_doc_to_structured_json(doc_dict, file_id, filename)
     structured_json["docling_raw"] = doc_dict
+    return markdown, structured_json
+
+
+def _convert_pdf_chunked(pdf_path: Path, file_id: str, filename: str, total_pages: int):
+    """Split a large PDF into temporary chunks, convert each, then merge."""
+    import tempfile, gc
+    import fitz
+
+    all_md_parts = []
+    all_doc_dicts = []
+
+    for start in range(0, total_pages, _PDF_CHUNK_SIZE):
+        end = min(start + _PDF_CHUNK_SIZE, total_pages)
+        print(f"[Docling]   Processing pages {start + 1}-{end} of {total_pages}...")
+
+        # Extract page range into a temp PDF
+        src = fitz.open(str(pdf_path))
+        tmp_pdf = fitz.open()
+        tmp_pdf.insert_pdf(src, from_page=start, to_page=end - 1)
+
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+            tmp_pdf.save(tmp.name)
+            tmp_path = tmp.name
+        tmp_pdf.close()
+        src.close()
+
+        pipeline_options = _build_pdf_pipeline()
+        converter = DocumentConverter(
+            format_options={"pdf": PdfFormatOption(pipeline_options=pipeline_options)}
+        )
+        result = converter.convert(tmp_path)
+        doc_dict = result.document.export_to_dict()
+
+        all_md_parts.append(_docling_doc_to_markdown(doc_dict))
+        all_doc_dicts.append(doc_dict)
+
+        os.remove(tmp_path)
+        del converter, result
+        gc.collect()
+
+    print(f"[Docling] Extraction complete for {file_id}.")
+
+    markdown = "\n\n".join(all_md_parts)
+    # Use the first chunk's dict as the base for structured JSON
+    structured_json = _docling_doc_to_structured_json(all_doc_dicts[0], file_id, filename)
+    structured_json["docling_raw"] = all_doc_dicts
     return markdown, structured_json
 
 
