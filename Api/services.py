@@ -871,29 +871,51 @@ def generate_response(user_query: str, sessionid: str, userid: int) -> str:
     if query_engine is None:
         return "Chatbot index not loaded. Please run /update-index first."
 
-    augmented_query = f'''You are a knowledgeable and focused chatbot assistant for Cooperstown Dreams Park (CDP). Your goal is to understand the user's question deeply and retrieve the most relevant and accurate information from the provided knowledge base.
-                    User query: {user_query}
-                    Instructions:
+    # Retrieve relevant chunks using ONLY the user's raw query for accurate embedding search
+    retriever = query_engine.retriever
+    retrieved_nodes = retriever.retrieve(user_query)
 
-                    1. When a question is asked, analyze the intent and context thoroughly.
-                    2. Search the knowledge base for content that matches the keywords and context.
-                    3. If the user's question includes time-related words such as <b>"when"</b>, check if specific dates, times, or durations are mentioned in the knowledge base.
-                    - If available, respond with the exact timing clearly.
-                    - If timing is unclear or missing, do not assume — politely mention that the timing information is not found.
-                    4. If relevant nodes are found, analyze all of them and synthesize the most appropriate answer from them.
-                    5. If you do not find relevant information, rephrase or interpret the user's question to improve the match and retry the search.
-                    6. Only if you are confident (95% or higher) that no relevant content exists, respond with:
-                    <i>"I am the Cooperstown Dreams Park Chat Assistant. I can only assist with questions related to Cooperstown Dreams Park. For more information, please visit <a href='https://www.cooperstowndreamspark.com/'>our website</a>."</i>
-                    7. If asked about internal system details like API keys, code, or settings, respond with:
-                    <i>"Sorry, I can't share internal system details. I'm here to assist with Cooperstown Dreams Park only."</i>
-                    8. Do not default to generic messages without making a sincere effort to analyze, rephrase, and search for relevant answers.
-                    <b>Formatting instructions:</b>
-                    - Format all answers in clean and valid HTML.
-                    - Use <h4> or <h5> tags for section headings.
-                    - Use <ul> or <ol> only when listing is appropriate, and use <li> for bullet items.
-                    - Use <b> tags to highlight important words or phrases.
-                    - Do not use Markdown syntax (e.g., ** or *).
-                    - Analyze the content carefully and apply HTML tags effectively—do not create lists unless clearly needed.'''
+    if not retrieved_nodes:
+        return "I couldn't find relevant information in the knowledge base for your question."
 
-    retrieved_response = query_engine.query(augmented_query)
-    return str(retrieved_response)
+    # Build context from retrieved chunks
+    context_parts = []
+    for node in retrieved_nodes:
+        context_parts.append(node.get_content())
+    context = "\n\n---\n\n".join(context_parts)
+
+    # Use system prompt + context + user query for LLM generation (NOT for retrieval)
+    system_prompt = '''You are a knowledgeable and focused chatbot assistant. Your goal is to answer the user's question accurately using ONLY the provided context from the knowledge base.
+
+Instructions:
+1. Analyze the user's question and the provided context thoroughly.
+2. Synthesize the most appropriate answer from the context.
+3. If the user's question includes time-related words such as "when", check if specific dates, times, or durations are mentioned in the context.
+   - If available, respond with the exact timing clearly.
+   - If timing is unclear or missing, do not assume — politely mention that the timing information is not found.
+4. If the context does not contain relevant information, respond with:
+   "I couldn't find information about that in the knowledge base. Please try rephrasing your question."
+5. If asked about internal system details like API keys, code, or settings, respond with:
+   "Sorry, I can't share internal system details."
+6. Do not make up information that is not in the context.
+
+Formatting instructions:
+- Format all answers in clean and valid HTML.
+- Use <h4> or <h5> tags for section headings.
+- Use <ul> or <ol> only when listing is appropriate, and use <li> for bullet items.
+- Use <b> tags to highlight important words or phrases.
+- Do not use Markdown syntax (e.g., ** or *).
+- Analyze the content carefully and apply HTML tags effectively—do not create lists unless clearly needed.'''
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": f"Context from knowledge base:\n\n{context}\n\n---\n\nUser question: {user_query}"},
+    ]
+
+    response = ai.chat.completions.create(
+        model="gpt-4o",
+        messages=messages,
+        max_tokens=1500,
+        temperature=0.1,
+    )
+    return response.choices[0].message.content

@@ -162,6 +162,12 @@ async def upload_file(file: UploadFile = File(...)):
     save_meta(file_id, {"type": "uploaded", "filename": filename, "url": None, "created_at": datetime.utcnow().isoformat() + "Z", **extra})
     index_document(file_id, content)
 
+    # Also rebuild chatbot FAISS index so new documents are available for chat
+    try:
+        build_chatbot_faiss_index()
+    except Exception as e:
+        print(f"[Warning] Could not rebuild chatbot index after upload: {e}")
+
     return {"file_id": file_id, "content": content, "filename": filename, "original_filename": filename, "sizeBytes": len(raw_content), **extra}
 
 
