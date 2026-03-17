@@ -326,6 +326,45 @@ def _pymupdf_extract_image_text(pdf_path: Optional[Path], obj: Dict[str, Any]) -
         return ""
 
 
+def _pymupdf_supplementary_text(pdf_path: Path, docling_md: str) -> str:
+    """Extract all text from the PDF via PyMuPDF and return lines that Docling missed."""
+    try:
+        import fitz
+        doc = fitz.open(str(pdf_path))
+        missed_blocks: List[str] = []
+        docling_lower = docling_md.lower()
+
+        for page in doc:
+            blocks = page.get_text("blocks")  # list of (x0, y0, x1, y1, text, block_no, type)
+            for block in blocks:
+                if block[6] != 0:  # type 0 = text, 1 = image
+                    continue
+                text = block[4].strip()
+                if not text or len(text) < 5:
+                    continue
+                # Check if this text block (or its significant parts) is already in Docling output
+                # Split into lines and check each one
+                lines = [l.strip() for l in text.split("\n") if l.strip()]
+                missing_lines = []
+                for line in lines:
+                    # A line is "missing" if it doesn't appear in the Docling markdown
+                    if line.lower() not in docling_lower:
+                        missing_lines.append(line)
+                if missing_lines:
+                    missed_blocks.append("\n".join(missing_lines))
+
+        doc.close()
+
+        if missed_blocks:
+            combined = "\n\n".join(missed_blocks)
+            print(f"[Docling] PyMuPDF supplementary extraction found {len(missed_blocks)} missed text block(s)")
+            return combined
+        return ""
+    except Exception as e:
+        print(f"[Docling] PyMuPDF supplementary extraction failed: {e}")
+        return ""
+
+
 def _clean_bullet(s: str) -> str:
     s = (s or "").lstrip()
     if not s:
@@ -468,7 +507,17 @@ def _docling_doc_to_markdown(doc_dict: Dict[str, Any], pdf_path: Optional[Path] 
         walk_ref(child["$ref"], indent=0)
         lines.append("")
 
-    return "\n".join(lines).strip()
+    docling_md = "\n".join(lines).strip()
+
+    # ── Supplementary PyMuPDF extraction ──────────────────────────────
+    # Docling can miss text inside boxes, frames, or non-body content layers.
+    # Run a full PyMuPDF text extraction and append anything that was missed.
+    if pdf_path is not None:
+        extra = _pymupdf_supplementary_text(pdf_path, docling_md)
+        if extra:
+            docling_md += "\n\n" + extra
+
+    return docling_md
 
 
 def _docling_doc_to_structured_json(doc_dict: Dict[str, Any], file_id: str, filename: str, pdf_path: Optional[Path] = None) -> Dict[str, Any]:
