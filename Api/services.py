@@ -17,7 +17,7 @@ from openai import OpenAI
 from config import (
     OPENAI_API_KEY, STORAGE_DIR, IMAGES_DIR,
     FAISS_INDEX_PATH, FAISS_META_PATH, EMBEDDING_DIM,
-    TEXT_FOLDER, SAVE_PATH, MAX_FILE_SIZE, BASE_FILE_NAME,
+    TEXT_FOLDER, SAVE_PATH, MAX_FILE_SIZE, BASE_FILE_NAME, DATA_DIR,
     get_db_connection, clean_text,
 )
 
@@ -827,14 +827,32 @@ def load_chatbot_index():
 
 
 def build_chatbot_faiss_index():
-    """Rebuild the LlamaIndex FAISS index from TEXT_FOLDER documents."""
+    """Rebuild the LlamaIndex FAISS index from TEXT_FOLDER and Data documents."""
     global query_engine
 
-    documents = SimpleDirectoryReader(TEXT_FOLDER, required_exts=[".txt"]).load_data()
-    if not documents:
-        raise Exception("No documents found in the specified folder.")
+    documents = []
+    supported_exts = [".txt", ".md"]
 
-    print(f"Loaded {len(documents)} documents from {TEXT_FOLDER}")
+    # Load from storage folder (KB exports + uploaded docs)
+    try:
+        docs = SimpleDirectoryReader(TEXT_FOLDER, required_exts=supported_exts).load_data()
+        documents.extend(docs)
+        print(f"Loaded {len(docs)} documents from {TEXT_FOLDER}")
+    except ValueError:
+        print(f"No supported files found in {TEXT_FOLDER}")
+
+    # Also load from Data folder if it exists (base knowledge)
+    data_dir = str(DATA_DIR)
+    try:
+        if DATA_DIR.exists():
+            docs = SimpleDirectoryReader(data_dir, required_exts=supported_exts).load_data()
+            documents.extend(docs)
+            print(f"Loaded {len(docs)} documents from {data_dir}")
+    except ValueError:
+        print(f"No supported files found in {data_dir}")
+
+    if not documents:
+        raise Exception("No files found in storage or Data folders. Upload content or export KB pairs first.")
     embed_model = OpenAIEmbedding(model="text-embedding-3-large", api_key=OPENAI_API_KEY)
 
     embedding_dim = 3072

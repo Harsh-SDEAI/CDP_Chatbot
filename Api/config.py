@@ -15,6 +15,8 @@ OPENAI_API_KEY = "sk-proj-y_A46MbFd6itGK2iRlu8NwHr82H6BdWK4UnD-TrRHk1PnFfHJ4rMoG
 STORAGE_DIR = Path("storage")
 STORAGE_DIR.mkdir(exist_ok=True)
 
+DATA_DIR = Path(__file__).resolve().parent.parent / "Data"
+
 TEXT_FOLDER = str(STORAGE_DIR)
 SAVE_PATH = str(STORAGE_DIR)
 
