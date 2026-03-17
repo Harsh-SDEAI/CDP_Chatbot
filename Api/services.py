@@ -808,8 +808,9 @@ openai_llm = LlamaOpenAI(
     max_tokens=1024,
 )
 
-# Global query engine — loaded on startup, rebuilt via /update-index
+# Global query engine and embed model — loaded on startup, rebuilt via /update-index
 query_engine = None
+chatbot_embed_model = OpenAIEmbedding(model="text-embedding-3-large", api_key=OPENAI_API_KEY)
 
 
 def load_chatbot_index():
@@ -819,7 +820,7 @@ def load_chatbot_index():
     try:
         vector_store = FaissVectorStore.from_persist_dir(persist_dir)
         storage_context = StorageContext.from_defaults(vector_store=vector_store, persist_dir=persist_dir)
-        index = load_index_from_storage(storage_context=storage_context)
+        index = load_index_from_storage(storage_context=storage_context, embed_model=chatbot_embed_model)
         query_engine = index.as_query_engine(llm=openai_llm, similarity_top_k=7)
         print("Loaded chatbot FAISS index from local storage.")
     except Exception as e:
@@ -853,14 +854,13 @@ def build_chatbot_faiss_index():
 
     if not documents:
         raise Exception("No files found in storage or Data folders. Upload content or export KB pairs first.")
-    embed_model = OpenAIEmbedding(model="text-embedding-3-large", api_key=OPENAI_API_KEY)
 
     embedding_dim = 3072
     faiss_index = faiss.IndexFlatL2(embedding_dim)
     vector_store = FaissVectorStore(faiss_index=faiss_index)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-    index = VectorStoreIndex.from_documents(documents, storage_context=storage_context, embed_model=embed_model)
+    index = VectorStoreIndex.from_documents(documents, storage_context=storage_context, embed_model=chatbot_embed_model)
     index.storage_context.persist()
     query_engine = index.as_query_engine(llm=openai_llm, similarity_top_k=7)
     print("Created and saved new chatbot FAISS index to ./storage")
