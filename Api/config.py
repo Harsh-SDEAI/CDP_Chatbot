@@ -12,11 +12,11 @@ DATABASE_URL = "postgresql://postgres:admin123@localhost:5432/CDP_ASSISTANT"
 OPENAI_API_KEY = ""  # paste your OpenAI key here
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
-TEXT_FOLDER = r"D:\cdpgpt_enhancement\data"
-SAVE_PATH = r"D:\cdpgpt_enhancement\data"
-
 STORAGE_DIR = Path("storage")
 STORAGE_DIR.mkdir(exist_ok=True)
+
+TEXT_FOLDER = str(STORAGE_DIR)
+SAVE_PATH = str(STORAGE_DIR)
 
 IMAGES_DIR = STORAGE_DIR / "images"
 IMAGES_DIR.mkdir(exist_ok=True)

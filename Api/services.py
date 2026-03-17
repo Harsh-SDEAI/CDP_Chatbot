@@ -830,7 +830,7 @@ def build_chatbot_faiss_index():
     """Rebuild the LlamaIndex FAISS index from TEXT_FOLDER documents."""
     global query_engine
 
-    documents = SimpleDirectoryReader(TEXT_FOLDER).load_data()
+    documents = SimpleDirectoryReader(TEXT_FOLDER, required_exts=[".txt"]).load_data()
     if not documents:
         raise Exception("No documents found in the specified folder.")
 
