@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import uuid
 import httpx
@@ -41,6 +42,9 @@ FAISS_DIR.mkdir(exist_ok=True)
 
 app.mount("/images", StaticFiles(directory=str(IMAGES_DIR)), name="images")
 
+STATIC_DIR = Path(__file__).parent / "static"
+STATIC_DIR.mkdir(exist_ok=True)
+
 # ── OpenAI client
 ai = OpenAI()
 
@@ -58,6 +62,41 @@ _faiss_meta: List[Dict[str, Any]] = []   # [{file_id, chunk_index, text}, ...]
 
 class ScrapeRequest(BaseModel):
     url: str
+
+
+def _make_scrape_filename(url: str) -> str:
+    """Generate a human-readable .md filename from a URL.
+
+    Examples:
+        https://example.com           -> example_com.md
+        https://xyz.com/abc           -> xyz_com_abc.md
+        https://xyz.com/abc/def       -> xyz_com_abc_def.md
+        https://xyz.com/abc/def.html  -> xyz_com_abc_def.md
+    """
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    domain = parsed.netloc.replace("www.", "")         # strip www.
+    path   = parsed.path.strip("/")
+
+    # Remove file extensions from path segments
+    if path:
+        segments = path.split("/")
+        segments = [Path(s).stem if "." in s else s for s in segments]
+        name = domain + "/" + "/".join(segments)
+    else:
+        name = domain
+
+    # Sanitize: replace non-alphanumeric with underscores
+    safe = re.sub(r"[^A-Za-z0-9]", "_", name)
+    safe = re.sub(r"_+", "_", safe).strip("_")
+
+    # Deduplicate if already exists
+    candidate = safe
+    counter = 2
+    while (STORAGE_DIR / f"{candidate}.md").exists():
+        candidate = f"{safe}_{counter}"
+        counter += 1
+    return candidate
 
 class SaveContentRequest(BaseModel):
     file_id: str
@@ -553,6 +592,9 @@ async def startup_event():
 
 @app.get("/")
 def root():
+    index_path = STATIC_DIR / "index.html"
+    if index_path.exists():
+        return FileResponse(str(index_path), media_type="text/html")
     return {"message": "Admin Content Manager API is running"}
 
 
@@ -569,20 +611,20 @@ async def scrape_url(body: ScrapeRequest):
         raise HTTPException(status_code=400, detail=f"Failed to fetch URL: {str(e)}")
 
     markdown = html_to_markdown(response.text)
-    file_id  = str(uuid.uuid4())
+    file_id  = _make_scrape_filename(body.url)
 
     save_file(file_id, markdown)
     save_meta(file_id, {
         "type": "scraped",
         "url": body.url,
-        "filename": f"{body.url.split('//')[-1].split('/')[0]}_{file_id[:8]}.md",
+        "filename": f"{file_id}.md",
         "created_at": datetime.utcnow().isoformat() + "Z"
     })
 
     # Index for RAG
     index_document(file_id, markdown)
 
-    return {"file_id": file_id, "content": markdown, "url": body.url, "source_url": body.url}
+    return {"file_id": file_id, "content": markdown, "filename": f"{file_id}.md", "url": body.url, "source_url": body.url}
 
 
 @app.post("/upload")
@@ -633,12 +675,12 @@ async def upload_file(file: UploadFile = File(...)):
         save_file(file_id, content)
         extra = {}
 
-    save_meta(file_id, {"type": "uploaded", "filename": filename, "url": None, "created_at": datetime.utcnow().isoformat() + "Z", **extra})
+    save_meta(file_id, {"type": "uploaded", "filename": f"{file_id}.md", "original_filename": filename, "url": None, "created_at": datetime.utcnow().isoformat() + "Z", **extra})
 
     # Index for RAG
     index_document(file_id, content)
 
-    return {"file_id": file_id, "content": content, "filename": filename, "original_filename": filename, "sizeBytes": len(raw_content), **extra}
+    return {"file_id": file_id, "content": content, "filename": f"{file_id}.md", "original_filename": filename, "sizeBytes": len(raw_content), **extra}
 
 
 @app.get("/content/{file_id}")
