@@ -609,8 +609,8 @@ def image_to_docling(img_path: Path, file_id: str, filename: str):
     pipeline_options = PdfPipelineOptions()
     pipeline_options.do_ocr = True
     pipeline_options.ocr_options = EasyOcrOptions(lang=["en"])
-    pipeline_options.do_table_structure = True
-    pipeline_options.images_scale = 2.0
+    pipeline_options.do_table_structure = False   # disabled to save RAM alongside OCR
+    pipeline_options.images_scale = 1.0           # lower scale to reduce OCR memory usage
 
     converter = DocumentConverter(
         format_options={InputFormat.IMAGE: ImageFormatOption(pipeline_options=pipeline_options)}
@@ -650,15 +650,15 @@ def docx_to_text(docx_path: Path, file_id: str, filename: str):
     return markdown
 
 
-_PDF_CHUNK_SIZE = 10  # pages per batch – keeps peak RAM in check
+_PDF_CHUNK_SIZE = 2  # pages per batch – keeps peak RAM in check (OCR is memory-heavy)
 
 
 def _build_pdf_pipeline():
     pipeline_options = PdfPipelineOptions()
     pipeline_options.do_ocr = True
     pipeline_options.ocr_options = EasyOcrOptions(lang=["en"])
-    pipeline_options.do_table_structure = True
-    pipeline_options.images_scale = 2.0
+    pipeline_options.do_table_structure = False   # disabled to save RAM alongside OCR
+    pipeline_options.images_scale = 1.0           # lower scale to reduce OCR memory usage
     pipeline_options.generate_picture_images = True
     return pipeline_options
 
@@ -671,11 +671,7 @@ def pdf_to_docling(pdf_path: Path, file_id: str, filename: str):
     doc.close()
     print(f"[Docling] Starting OCR extraction for {file_id} ({total_pages} pages)...")
 
-    if total_pages <= _PDF_CHUNK_SIZE:
-        # Small PDF → single pass (original behaviour)
-        return _convert_pdf_single(pdf_path, file_id, filename)
-
-    # Large PDF → process in chunks of _PDF_CHUNK_SIZE pages
+    # Always use chunked processing to keep OCR memory usage in check
     return _convert_pdf_chunked(pdf_path, file_id, filename, total_pages)
 
 
