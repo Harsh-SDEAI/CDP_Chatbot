@@ -124,14 +124,14 @@ p, li { color: var(--text-2) !important; }
     letter-spacing: -0.01em !important;
 }
 .stButton > button[kind="primary"] {
-    background: var(--text) !important;
+    background: #6b7280 !important;
     border: none !important;
     color: #fff !important;
-    box-shadow: var(--shadow-sm) !important;
+    box-shadow: 0 1px 3px rgba(107,114,128,0.25) !important;
 }
 .stButton > button[kind="primary"]:hover {
-    background: #333 !important;
-    box-shadow: var(--shadow) !important;
+    background: #4b5563 !important;
+    box-shadow: 0 2px 8px rgba(107,114,128,0.3) !important;
     transform: translateY(-0.5px) !important;
 }
 .stButton > button[kind="primary"]:active { transform: translateY(0) !important; }
@@ -242,7 +242,7 @@ p, li { color: var(--text-2) !important; }
 hr { border-color: var(--border) !important; margin: 1.5rem 0 !important; }
 
 /* ── Slider ── */
-[data-testid="stSlider"] [data-baseweb="slider"] [role="slider"] { background: var(--text) !important; }
+[data-testid="stSlider"] [data-baseweb="slider"] [role="slider"] { background: #6b7280 !important; }
 
 /* ══ Custom Components ══ */
 
@@ -414,7 +414,7 @@ hr { border-color: var(--border) !important; margin: 1.5rem 0 !important; }
 }
 .chat-avatar {
     width: 36px; height: 36px; border-radius: 10px;
-    background: var(--text);
+    background: #6b7280;
     display: flex; align-items: center; justify-content: center;
     font-size: 0.85rem; color: #fff; font-weight: 700;
 }
@@ -453,7 +453,7 @@ hr { border-color: var(--border) !important; margin: 1.5rem 0 !important; }
 
 .msg-user { display: flex; justify-content: flex-end; gap: 8px; align-items: flex-end; }
 .msg-user-bubble {
-    background: var(--text);
+    background: #6b7280;
     color: #fff; padding: 9px 14px;
     border-radius: 14px 14px 4px 14px;
     font-size: 0.86rem; max-width: 70%;
@@ -461,7 +461,7 @@ hr { border-color: var(--border) !important; margin: 1.5rem 0 !important; }
 }
 .msg-user-av {
     width: 26px; height: 26px; border-radius: 50%;
-    background: var(--text);
+    background: #6b7280;
     display: flex; align-items: center; justify-content: center;
     font-size: 0.65rem; color: white; font-weight: 600; flex-shrink: 0;
 }
@@ -592,7 +592,7 @@ def md_to_html(text):
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 st.sidebar.markdown("""
 <div style="padding:0.25rem 0.5rem 1.25rem;display:flex;align-items:center;gap:11px;">
-  <div style="width:36px;height:36px;background:#1a1a1a;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+  <div style="width:36px;height:36px;background:#6b7280;border-radius:10px;display:flex;align-items:center;justify-content:center;">
     <span style="color:#fff;font-weight:700;font-size:0.85rem;font-family:Inter,sans-serif;">C</span>
   </div>
   <div>
