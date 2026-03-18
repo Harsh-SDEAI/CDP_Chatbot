@@ -415,22 +415,108 @@ def image_to_docling(img_path: Path, file_id: str, filename: str):
     structured_json = _docling_doc_to_structured_json(doc_dict, file_id, filename)
     structured_json["docling_raw"] = doc_dict
     return markdown, structured_json
-def pdf_to_docling(pdf_path: Path, file_id: str, filename: str):
-    print(f"[Docling] Starting full OCR extraction for {file_id}...")
+def _convert_single_page_pdf(page_pdf_path: str, use_ocr: bool):
+    """Convert a single-page PDF with or without OCR."""
     pipeline_options = PdfPipelineOptions()
-    pipeline_options.do_ocr = True
-    pipeline_options.do_table_structure = True
-    pipeline_options.images_scale = 2.0
+    pipeline_options.do_ocr = use_ocr
+    if use_ocr:
+        pipeline_options.ocr_options = EasyOcrOptions(lang=["en"])
+    pipeline_options.do_table_structure = use_ocr
+    pipeline_options.images_scale = 1.5 if use_ocr else 1.0
     pipeline_options.generate_picture_images = True
     converter = DocumentConverter(
         format_options={"pdf": PdfFormatOption(pipeline_options=pipeline_options)}
     )
-    result   = converter.convert(str(pdf_path))
-    doc_dict = result.document.export_to_dict()
+    result = converter.convert(page_pdf_path)
+    return result.document.export_to_dict()
+
+
+def _extract_page_text_pymupdf(pdf_path, page_num: int) -> str:
+    """Last-resort fallback: extract raw text with PyMuPDF."""
+    import fitz
+    doc = fitz.open(str(pdf_path))
+    text = doc[page_num].get_text("text").strip()
+    doc.close()
+    return text
+
+
+def pdf_to_docling(pdf_path: Path, file_id: str, filename: str):
+    import fitz
+    import tempfile, os, gc
+
+    src = fitz.open(str(pdf_path))
+    total_pages = len(src)
+    print(f"[Docling] Starting page-by-page OCR extraction for {file_id} ({total_pages} pages)...")
+
+    all_md_parts: List[str] = []
+    all_doc_dicts: List[Dict] = []
+
+    for page_num in range(total_pages):
+        print(f"[Docling]   Page {page_num + 1}/{total_pages}...")
+
+        # Extract single page to a temp PDF
+        tmp_doc = fitz.open()
+        tmp_doc.insert_pdf(src, from_page=page_num, to_page=page_num)
+        tmp_fd, tmp_path = tempfile.mkstemp(suffix=".pdf")
+        os.close(tmp_fd)
+        tmp_doc.save(tmp_path)
+        tmp_doc.close()
+
+        doc_dict = None
+
+        # Attempt 1: Docling with OCR
+        try:
+            doc_dict = _convert_single_page_pdf(tmp_path, use_ocr=True)
+            print(f"[Docling]   Page {page_num + 1}: OCR success")
+        except Exception as e1:
+            print(f"[Docling]   Page {page_num + 1}: OCR failed ({type(e1).__name__}), trying without OCR...")
+
+            # Attempt 2: Docling without OCR (text-layer only)
+            try:
+                doc_dict = _convert_single_page_pdf(tmp_path, use_ocr=False)
+                print(f"[Docling]   Page {page_num + 1}: no-OCR success")
+            except Exception as e2:
+                print(f"[Docling]   Page {page_num + 1}: Docling failed entirely ({type(e2).__name__}), using PyMuPDF fallback")
+
+        if doc_dict is not None:
+            md = _docling_doc_to_markdown(doc_dict)
+            all_md_parts.append(md)
+            all_doc_dicts.append(doc_dict)
+        else:
+            # Attempt 3: PyMuPDF raw text as last resort
+            raw_text = _extract_page_text_pymupdf(pdf_path, page_num)
+            if raw_text:
+                all_md_parts.append(raw_text)
+                print(f"[Docling]   Page {page_num + 1}: PyMuPDF extracted {len(raw_text)} chars")
+            else:
+                all_md_parts.append(f"[Page {page_num + 1}: extraction failed]")
+
+        # Cleanup temp file and force garbage collection
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+        gc.collect()
+
+    src.close()
     print(f"[Docling] Extraction complete for {file_id}.")
-    markdown        = _docling_doc_to_markdown(doc_dict)
-    structured_json = _docling_doc_to_structured_json(doc_dict, file_id, filename)
-    structured_json["docling_raw"] = doc_dict
+
+    markdown = "\n\n---\n\n".join(part for part in all_md_parts if part.strip())
+
+    # Build structured JSON from first successful doc_dict (or empty)
+    if all_doc_dicts:
+        structured_json = _docling_doc_to_structured_json(all_doc_dicts[0], file_id, filename)
+        structured_json["docling_raw"] = all_doc_dicts
+        structured_json["page_count"] = total_pages
+    else:
+        structured_json = {
+            "file_id": file_id,
+            "filename": filename,
+            "page_count": total_pages,
+            "extracted_at": datetime.utcnow().isoformat() + "Z",
+            "blocks": [],
+        }
+
     return markdown, structured_json
 # ─── Startup ──────────────────────────────────────────────────────────────────
 @app.on_event("startup")
