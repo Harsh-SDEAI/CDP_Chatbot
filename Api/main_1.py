@@ -235,6 +235,38 @@ def _make_file_id(filename: str) -> str:
     return candidate
 
 
+def _make_scrape_filename(url: str) -> str:
+    """Generate a human-readable filename from a URL.
+
+    Examples:
+        https://www.cooperstowndreamspark.com/testimonials/  -> cooperstowndreamspark_com_testimonials
+        https://example.com                                  -> example_com
+        https://xyz.com/abc/def                              -> xyz_com_abc_def
+        https://xyz.com/abc/def.html                         -> xyz_com_abc_def
+    """
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    domain = parsed.netloc.replace("www.", "")
+    path   = parsed.path.strip("/")
+
+    if path:
+        segments = path.split("/")
+        segments = [Path(s).stem if "." in s else s for s in segments]
+        name = domain + "/" + "/".join(segments)
+    else:
+        name = domain
+
+    safe = re.sub(r"[^A-Za-z0-9]", "_", name)
+    safe = re.sub(r"_+", "_", safe).strip("_")
+
+    candidate = safe
+    counter = 2
+    while (STORAGE_DIR / f"{candidate}.md").exists():
+        candidate = f"{safe}_{counter}"
+        counter += 1
+    return candidate
+
+
 def html_to_markdown(html: str) -> str:
     soup = BeautifulSoup(html, "html.parser")
     for tag in soup(["script", "style", "nav", "footer", "header"]):
@@ -571,20 +603,20 @@ async def scrape_url(body: ScrapeRequest):
         raise HTTPException(status_code=400, detail=f"Failed to fetch URL: {str(e)}")
 
     markdown = html_to_markdown(response.text)
-    file_id  = str(uuid.uuid4())
+    file_id  = _make_scrape_filename(body.url)
 
     save_file(file_id, markdown)
     save_meta(file_id, {
         "type": "scraped",
         "url": body.url,
-        "filename": f"{body.url.split('//')[-1].split('/')[0]}_{file_id[:8]}.md",
+        "filename": f"{file_id}.md",
         "created_at": datetime.utcnow().isoformat() + "Z"
     })
 
     # Index for RAG
     index_document(file_id, markdown)
 
-    return {"file_id": file_id, "content": markdown, "url": body.url, "source_url": body.url}
+    return {"file_id": file_id, "content": markdown, "filename": f"{file_id}.md", "url": body.url, "source_url": body.url}
 
 
 @app.post("/upload")
@@ -635,12 +667,12 @@ async def upload_file(file: UploadFile = File(...)):
         save_file(file_id, content)
         extra = {}
 
-    save_meta(file_id, {"type": "uploaded", "filename": filename, "url": None, "created_at": datetime.utcnow().isoformat() + "Z", **extra})
+    save_meta(file_id, {"type": "uploaded", "filename": f"{file_id}.md", "original_filename": filename, "url": None, "created_at": datetime.utcnow().isoformat() + "Z", **extra})
 
     # Index for RAG
     index_document(file_id, content)
 
-    return {"file_id": file_id, "content": content, "filename": filename, "original_filename": filename, "sizeBytes": len(raw_content), **extra}
+    return {"file_id": file_id, "content": content, "filename": f"{file_id}.md", "original_filename": filename, "sizeBytes": len(raw_content), **extra}
 
 
 @app.get("/content/{file_id}")
@@ -665,9 +697,13 @@ def list_files():
     for path in STORAGE_DIR.glob("*.md"):
         file_id = path.stem
         meta    = load_meta(file_id)
+        # Always display as .md
+        raw_name = meta.get("filename") or f"{file_id}.md"
+        if not raw_name.endswith(".md"):
+            raw_name = Path(raw_name).stem + ".md"
         files.append({
             "file_id":     file_id,
-            "filename":    meta.get("filename", f"{file_id}.md"),
+            "filename":    raw_name,
             "type":        meta.get("type", "scraped"),
             "url":         meta.get("url"),
             "size_bytes":  path.stat().st_size,
