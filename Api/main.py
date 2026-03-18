@@ -706,9 +706,13 @@ def list_files():
     for path in STORAGE_DIR.glob("*.md"):
         file_id = path.stem
         meta    = load_meta(file_id)
+        # Always display as .md — strip any original extension and force .md
+        raw_name = meta.get("filename") or f"{file_id}.md"
+        if not raw_name.endswith(".md"):
+            raw_name = Path(raw_name).stem + ".md"
         files.append({
             "file_id":     file_id,
-            "filename":    meta.get("filename", f"{file_id}.md"),
+            "filename":    raw_name,
             "type":        meta.get("type", "scraped"),
             "url":         meta.get("url"),
             "size_bytes":  path.stat().st_size,

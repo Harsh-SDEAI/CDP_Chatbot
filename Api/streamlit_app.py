@@ -672,7 +672,11 @@ if page == "Files":
 
     for f in files:
         fid      = f["file_id"]
-        fname    = f.get("filename") or fid
+        fname    = f.get("filename") or f"{fid}.md"
+        # Always display as .md
+        if not fname.endswith(".md"):
+            from pathlib import PurePosixPath
+            fname = PurePosixPath(fname).stem + ".md"
         ftype    = f.get("type", "uploaded")
         size     = fmt_bytes(f.get("size_bytes", 0))
         modified = fmt_ts(f.get("last_modified", 0))
