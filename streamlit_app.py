@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-import uuid
 import time
 
 # ─── Configuration ───────────────────────────────────────────────────────────
@@ -109,7 +108,7 @@ with st.sidebar:
 
     page = st.radio(
         "📍 Navigation",
-        ["💬 Chat", "📄 Content Management", "🔍 RAG Query", "📜 History", "⚙️ Settings"],
+        ["💬 RAG Chat", "📄 Content Management", "⚙️ Settings"],
         label_visibility="collapsed",
     )
 
@@ -137,15 +136,6 @@ def api_post(path, json_body=None, files=None, timeout=60):
         return None, str(e)
 
 
-def api_put(path, json_body):
-    try:
-        r = requests.put(f"{API_URL}{path}", json=json_body, timeout=30)
-        r.raise_for_status()
-        return r.json(), None
-    except Exception as e:
-        return None, str(e)
-
-
 def api_delete(path):
     try:
         r = requests.delete(f"{API_URL}{path}", timeout=30)
@@ -165,28 +155,17 @@ def format_bytes(size_bytes):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  CHAT PAGE
+#  RAG CHAT PAGE
 # ═══════════════════════════════════════════════════════════════════════════════
 
-if page == "💬 Chat":
-    st.title("💬 CDP Chat")
-    st.markdown("Ask questions about CDP — powered by AI with your knowledge base.")
+if page == "💬 RAG Chat":
+    st.title("💬 RAG Chat")
+    st.markdown("Ask questions about your documents — powered by FAISS + OpenAI.")
 
-    # Session controls
-    col1, col2, col3 = st.columns([2, 3, 1])
-    with col1:
-        userid = st.number_input("User ID", min_value=1, value=1, step=1)
+    # Top-K setting
+    col1, col2 = st.columns([4, 1])
     with col2:
-        if "session_id" not in st.session_state:
-            st.session_state.session_id = str(uuid.uuid4())
-        session_id = st.text_input("Session ID", value=st.session_state.session_id)
-    with col3:
-        st.write("")
-        st.write("")
-        if st.button("🔄 New Session", use_container_width=True):
-            st.session_state.session_id = str(uuid.uuid4())
-            st.session_state.chat_messages = []
-            st.rerun()
+        top_k = st.number_input("Top K chunks", min_value=1, max_value=20, value=5)
 
     st.markdown("---")
 
@@ -196,38 +175,36 @@ if page == "💬 Chat":
 
     for msg in st.session_state.chat_messages:
         with st.chat_message(msg["role"], avatar="🧑" if msg["role"] == "user" else "🤖"):
-            if msg["role"] == "assistant":
-                st.html(msg["content"])
-                if msg.get("time_taken"):
-                    st.caption(f"⏱️ {msg['time_taken']:.2f}s")
-            else:
-                st.markdown(msg["content"])
+            st.markdown(msg["content"])
 
     # Chat input
-    query = st.chat_input("Ask a question about CDP...")
+    query = st.chat_input("Ask a question about your documents...")
     if query:
         st.session_state.chat_messages.append({"role": "user", "content": query})
         with st.chat_message("user", avatar="🧑"):
             st.markdown(query)
 
         with st.chat_message("assistant", avatar="🤖"):
-            with st.spinner("🤔 Thinking..."):
+            with st.spinner("🔎 Searching knowledge base..."):
                 resp, err = api_post(
-                    "/chat",
-                    json_body={"query": query, "userid": int(userid), "sessionid": session_id},
+                    "/rag/query",
+                    json_body={"query": query, "top_k": top_k},
                 )
             if err:
                 st.error(f"❌ {err}")
             else:
-                answer = resp.get("response", "No response.")
-                time_taken = resp.get("time_taken", 0)
-                st.html(answer)
-                st.caption(f"⏱️ {time_taken:.2f}s")
+                answer = resp.get("answer", "No response.")
+                st.markdown(answer)
                 st.session_state.chat_messages.append({
                     "role": "assistant",
                     "content": answer,
-                    "time_taken": time_taken,
                 })
+
+    # Clear chat button
+    if st.session_state.chat_messages:
+        if st.button("🗑️ Clear Chat"):
+            st.session_state.chat_messages = []
+            st.rerun()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -258,7 +235,6 @@ elif page == "📄 Content Management":
                 st.markdown(f"**{len(files)} files** in your knowledge base")
 
                 for f in files:
-                    badge_class = "badge-uploaded" if f["type"] == "uploaded" else "badge-scraped"
                     with st.expander(f"📄 {f['filename']}"):
                         # Info row
                         c1, c2, c3, c4 = st.columns(4)
@@ -293,21 +269,16 @@ elif page == "📄 Content Management":
                                     time.sleep(0.5)
                                     st.rerun()
 
-                        # View/edit content area
+                        # View content area (read-only)
                         if st.session_state.get(f"viewing_{f['file_id']}"):
                             content_val = st.session_state.get(f"content_{f['file_id']}", "")
-                            edited = st.text_area(
-                                "Content",
+                            st.text_area(
+                                "Content (read-only)",
                                 value=content_val,
                                 height=300,
-                                key=f"edit_{f['file_id']}",
+                                key=f"view_content_{f['file_id']}",
+                                disabled=True,
                             )
-                            if st.button("💾 Save Changes", key=f"save_{f['file_id']}"):
-                                resp, serr = api_put("/content", {"file_id": f["file_id"], "content": edited})
-                                if serr:
-                                    st.error(serr)
-                                else:
-                                    st.success("✅ Content saved and re-indexed")
 
     # ─── Upload Tab ──────────────────────────────────────────────────────
     with tab_upload:
@@ -315,19 +286,19 @@ elif page == "📄 Content Management":
 
         uploaded = st.file_uploader(
             "Choose a file",
-            type=["pdf", "txt", "md", "docx", "png", "jpg", "jpeg", "webp", "bmp", "tiff", "tif"],
-            help="Supported: PDF, TXT, MD, DOCX, PNG, JPG, JPEG, WEBP, BMP, TIFF",
+            type=["pdf", "txt", "md", "png", "jpg", "jpeg", "webp", "bmp", "tiff", "tif"],
+            help="Supported: PDF, TXT, MD, PNG, JPG, JPEG, WEBP, BMP, TIFF",
         )
 
         if uploaded:
             st.markdown(f"**Selected:** `{uploaded.name}` ({format_bytes(uploaded.size)})")
 
             if st.button("⬆️ Upload File", type="primary"):
-                with st.spinner("⏳ Uploading and processing..."):
+                with st.spinner("⏳ Uploading and processing (OCR may take a moment)..."):
                     resp, err = api_post(
                         "/upload",
                         files={"file": (uploaded.name, uploaded.getvalue(), uploaded.type or "application/octet-stream")},
-                        timeout=120,
+                        timeout=300,
                     )
                 if err:
                     st.error(f"❌ {err}")
@@ -357,70 +328,6 @@ elif page == "📄 Content Management":
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  RAG QUERY PAGE
-# ═══════════════════════════════════════════════════════════════════════════════
-
-elif page == "🔍 RAG Query":
-    st.title("🔍 RAG Query")
-    st.markdown("Search and ask questions against the admin knowledge base (direct FAISS).")
-
-    col1, col2 = st.columns([4, 1])
-    with col1:
-        rag_query = st.text_input("Your question", placeholder="Ask anything about your documents...")
-    with col2:
-        top_k = st.number_input("Top K", min_value=1, max_value=20, value=5)
-
-    if rag_query and st.button("🔍 Search", type="primary"):
-        with st.spinner("🔎 Searching knowledge base..."):
-            resp, err = api_post("/rag/query", json_body={"query": rag_query, "top_k": top_k})
-        if err:
-            st.error(f"❌ {err}")
-        else:
-            st.markdown("### Answer")
-            st.markdown(resp.get("answer", "No answer returned."))
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-#  HISTORY PAGE
-# ═══════════════════════════════════════════════════════════════════════════════
-
-elif page == "📜 History":
-    st.title("📜 Chat History")
-    st.markdown("View past conversations between users and the chatbot.")
-
-    hist, err = api_get("/history")
-    if err:
-        st.error(f"❌ Failed to load: {err}")
-    else:
-        entries = hist.get("conversation_history", [])
-        if not entries:
-            st.info("📭 No chat history found.")
-        else:
-            # Filters
-            col1, col2 = st.columns([1, 3])
-            with col1:
-                filter_user = st.text_input("🔎 Filter by User ID")
-
-            filtered = entries
-            if filter_user:
-                filtered = [e for e in filtered if str(filter_user) == str(e.get("user_registration_id", ""))]
-
-            st.markdown(f"**Showing {min(len(filtered), 100)} of {len(filtered)} entries**")
-
-            for entry in filtered[:100]:
-                q_preview = (entry.get("question", "") or "")[:80]
-                ts = entry.get("timestamp", "")
-                uid = entry.get("user_registration_id", "?")
-
-                with st.expander(f"🗨️ User {uid} — {q_preview}{'...' if len(entry.get('question', '') or '') > 80 else ''}"):
-                    st.caption(f"🕐 {ts}  |  Session: `{(entry.get('session_id', '') or '')[:12]}...`")
-                    st.markdown(f"**Question:**")
-                    st.markdown(entry.get("question", ""))
-                    st.markdown("**Answer:**")
-                    st.html(entry.get("answer", ""))
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
 #  SETTINGS PAGE
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -444,8 +351,8 @@ elif page == "⚙️ Settings":
     stats, err = api_get("/rag/index/stats")
     if stats:
         c1, c2, c3 = st.columns(3)
-        c1.metric("Admin Vectors", stats["total_vectors"])
-        c2.metric("Admin Documents", stats["total_documents"])
+        c1.metric("Total Vectors", stats["total_vectors"])
+        c2.metric("Total Documents", stats["total_documents"])
         c3.metric("Indexed File IDs", len(stats.get("indexed_file_ids", [])))
 
         if stats.get("indexed_file_ids"):
@@ -460,66 +367,27 @@ elif page == "⚙️ Settings":
     # ─── Index Controls ──────────────────────────────────────────────────
     st.subheader("🛠️ Index Controls")
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown("**Admin FAISS Index**")
-        st.caption("Rebuilds the admin RAG index from all stored documents.")
-        if st.button("🔨 Rebuild Admin Index", use_container_width=True):
-            with st.spinner("Rebuilding admin index..."):
+        st.markdown("**Rebuild FAISS Index**")
+        st.caption("Re-indexes all stored documents from scratch.")
+        if st.button("🔨 Rebuild Index", use_container_width=True):
+            with st.spinner("Rebuilding index..."):
                 resp, err = api_post("/rag/index/rebuild")
             if err:
                 st.error(err)
             else:
                 st.success(resp.get("message", "Done"))
+                st.metric("Total Vectors", resp.get("total_vectors", 0))
 
     with col2:
-        st.markdown("**Chatbot FAISS Index**")
-        st.caption("Rebuilds the LlamaIndex chatbot index from text files.")
-        if st.button("🔨 Rebuild Chatbot Index", use_container_width=True):
-            with st.spinner("Rebuilding chatbot index..."):
-                resp, err = api_post("/update-index")
+        st.markdown("**Remove Document from Index**")
+        st.caption("Remove a specific document's chunks from the FAISS index.")
+        remove_fid = st.text_input("File ID to remove")
+        if remove_fid and st.button("🗑️ Remove from Index", use_container_width=True):
+            resp, err = api_delete(f"/rag/index/{remove_fid}")
             if err:
                 st.error(err)
             else:
-                st.success(f"Indexed {resp.get('documents_indexed', '?')} docs")
-
-    with col3:
-        st.markdown("**Update All**")
-        st.caption("Exports KB pairs from DB, then rebuilds the chatbot index.")
-        if st.button("🚀 Update All (KB + Index)", type="primary", use_container_width=True):
-            with st.spinner("Exporting KB and rebuilding index..."):
-                resp, err = api_post("/update-all")
-            if err:
-                st.error(err)
-            else:
-                st.success(resp.get("message", "Done"))
-
-    st.markdown("---")
-
-    # ─── KB Export ───────────────────────────────────────────────────────
-    st.subheader("📤 Knowledge Base Export")
-    st.caption("Export approved Q&A pairs from the database to text files for indexing.")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("📤 Export KB Pairs", use_container_width=True):
-            with st.spinner("Exporting..."):
-                resp, err = api_post("/update-kb")
-            if err:
-                st.error(err)
-            else:
-                st.success(resp.get("message", "Export complete"))
-                if resp.get("files"):
-                    st.markdown(f"Files created/updated: `{', '.join(resp['files'])}`")
-
-    with col2:
-        if st.button("📝 Generate TXT Files", use_container_width=True):
-            with st.spinner("Generating..."):
-                resp, err = api_post("/generate-txt")
-            if err:
-                st.error(err)
-            else:
-                generated = resp.get("generated", [])
-                skipped = resp.get("skipped", [])
-                st.success(f"Generated: {len(generated)}, Skipped: {len(skipped)}")
+                st.success(resp.get("message", "Removed"))
