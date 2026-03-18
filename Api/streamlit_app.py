@@ -586,7 +586,7 @@ st.sidebar.markdown('<div style="font-size:0.68rem;font-weight:700;text-transfor
 
 page = st.sidebar.radio(
     "nav",
-    ["📋  Files", "⬆️  Upload", "🌐  Scrape URL", "💬  RAG Chat", "⚙️  Index Tools"],
+    ["📋  Files", "⬆️  Upload", "💬  RAG Chat", "⚙️  Index Tools"],
     label_visibility="collapsed",
 )
 
@@ -735,94 +735,156 @@ if page == "📋  Files":
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# UPLOAD PAGE
+# UPLOAD PAGE (File Upload + URL Scrape in one popup-style dialog)
 # ═══════════════════════════════════════════════════════════════════════════════
 elif page == "⬆️  Upload":
     st.markdown("""
     <div class="page-header">
       <div class="page-header-icon">⬆️</div>
       <div>
-        <div class="page-header-title">Upload File</div>
-        <div class="page-header-sub">Upload documents for OCR extraction and vector indexing</div>
+        <div class="page-header-title">Upload Content</div>
+        <div class="page-header-sub">Upload a file or fetch from a URL — everything is saved as .md</div>
       </div>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("""
-    <div class="info-banner">
-      ✦ &nbsp; Supported formats: <strong>PDF</strong> · <strong>TXT</strong> · <strong>MD</strong> · <strong>PNG</strong> · <strong>JPG</strong> · <strong>WEBP</strong> · <strong>BMP</strong> · <strong>TIFF</strong>
-    </div>
-    """, unsafe_allow_html=True)
+    # ── Upload method selector (popup-style) ──
+    if "show_upload_popup" not in st.session_state:
+        st.session_state["show_upload_popup"] = False
+    if "upload_result" not in st.session_state:
+        st.session_state["upload_result"] = None
 
-    uploaded = st.file_uploader(
-        "Drop your file here",
-        type=["pdf", "txt", "md", "png", "jpg", "jpeg", "webp", "bmp", "tiff", "tif"],
-        label_visibility="collapsed",
-    )
-
-    if uploaded:
+    # Show last result if available
+    if st.session_state["upload_result"]:
+        res = st.session_state["upload_result"]
         st.markdown(f"""
-        <div class="glass-card-sm" style="display:flex;align-items:center;gap:12px;margin:0.75rem 0;">
-          <div style="width:38px;height:38px;background:rgba(5,150,105,0.1);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;">📎</div>
-          <div>
-            <div style="font-weight:600;font-size:0.9rem;color:#1a1a2e;font-family:Outfit,sans-serif;">{uploaded.name}</div>
-            <div style="font-size:0.75rem;color:#9898b8;font-family:'JetBrains Mono',monospace;">{fmt_bytes(uploaded.size)}</div>
+        <div class="glass-card" style="border-left: 3px solid #059669;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <span style="font-size:1.3rem;">✅</span>
+            <span style="font-weight:600;font-size:1rem;color:#1a1a2e;font-family:Outfit,sans-serif;">Successfully saved as</span>
           </div>
-          <div style="margin-left:auto;"><span class="badge badge-upload">Ready</span></div>
+          <div style="background:rgba(79,70,229,0.06);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:1.2rem;">📄</span>
+            <span style="font-weight:700;font-size:1.05rem;color:#4f46e5;font-family:'JetBrains Mono',monospace;">{res['filename']}</span>
+          </div>
         </div>
         """, unsafe_allow_html=True)
 
-        if st.button("⬆️  Upload & Index", type="primary"):
-            with st.spinner("Processing… OCR and indexing may take a moment for large files."):
-                data, err = api("POST", "/upload", files={"file": (uploaded.name, uploaded.getvalue(), uploaded.type)})
+        if res.get("page_count") or res.get("block_count"):
+            c1, c2 = st.columns(2)
+            c1.metric("Pages", res.get("page_count", "—"))
+            c2.metric("Blocks", res.get("block_count", "—"))
+
+        with st.expander("📄 View Extracted Markdown"):
+            st.markdown(res.get("content", "*(empty)*"))
+
+        if st.button("Upload Another", type="secondary"):
+            st.session_state["upload_result"] = None
+            st.rerun()
+        st.stop()
+
+    # ── Main upload button ──
+    st.markdown("<br>", unsafe_allow_html=True)
+    col_btn = st.columns([1, 2, 1])
+    with col_btn[1]:
+        if st.button("+ Upload", type="primary", use_container_width=True):
+            st.session_state["show_upload_popup"] = True
+            st.rerun()
+
+    if not st.session_state["show_upload_popup"]:
+        st.markdown("""
+        <div style="text-align:center;padding:3rem 1rem;background:rgba(255,255,255,0.6);border:1px solid rgba(0,0,0,0.07);border-radius:20px;backdrop-filter:blur(12px);margin-top:1rem;">
+          <div style="font-size:2.5rem;margin-bottom:12px;">📂</div>
+          <div style="font-size:1rem;font-weight:600;color:#5a5a7a;font-family:Outfit,sans-serif;">Click Upload to add content</div>
+          <div style="font-size:0.82rem;color:#9898b8;margin-top:4px;font-family:Outfit,sans-serif;">Upload a file or paste a URL to scrape — output is always a .md file</div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.stop()
+
+    # ── Popup content ──
+    st.markdown("""
+    <div class="glass-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <span style="font-weight:700;font-size:1.05rem;color:#1a1a2e;font-family:Outfit,sans-serif;">Add Content</span>
+      </div>
+      <div style="font-size:0.8rem;color:#9898b8;font-family:Outfit,sans-serif;margin-bottom:8px;">Choose how you want to add content</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    tab_file, tab_url = st.tabs(["📁 File Upload", "🌐 URL"])
+
+    # ── File Upload tab ──
+    with tab_file:
+        st.markdown("""
+        <div class="info-banner">
+          ✦ &nbsp; Supported: <strong>PDF</strong> · <strong>TXT</strong> · <strong>MD</strong> · <strong>PNG</strong> · <strong>JPG</strong> · <strong>WEBP</strong> · <strong>BMP</strong> · <strong>TIFF</strong>
+        </div>
+        """, unsafe_allow_html=True)
+
+        uploaded = st.file_uploader(
+            "Drop your file here",
+            type=["pdf", "txt", "md", "png", "jpg", "jpeg", "webp", "bmp", "tiff", "tif"],
+            label_visibility="collapsed",
+        )
+
+        if uploaded:
+            st.markdown(f"""
+            <div class="glass-card-sm" style="display:flex;align-items:center;gap:12px;margin:0.75rem 0;">
+              <div style="width:38px;height:38px;background:rgba(5,150,105,0.1);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;">📎</div>
+              <div>
+                <div style="font-weight:600;font-size:0.9rem;color:#1a1a2e;font-family:Outfit,sans-serif;">{uploaded.name}</div>
+                <div style="font-size:0.75rem;color:#9898b8;font-family:'JetBrains Mono',monospace;">{fmt_bytes(uploaded.size)}</div>
+              </div>
+              <div style="margin-left:auto;"><span class="badge badge-upload">Ready</span></div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            if st.button("⬆️  Upload & Convert to .md", type="primary", key="upload_file_btn"):
+                with st.spinner("Processing... Converting to markdown in background"):
+                    data, err = api("POST", "/upload", files={"file": (uploaded.name, uploaded.getvalue(), uploaded.type)})
+                if err:
+                    st.error(err)
+                else:
+                    st.session_state["upload_result"] = data
+                    st.session_state["show_upload_popup"] = False
+                    st.rerun()
+
+    # ── URL tab ──
+    with tab_url:
+        st.markdown("""
+        <div class="info-banner">
+          ✦ &nbsp; Paste a URL below and click <strong>Fetch Info</strong> to scrape the page and convert it to markdown
+        </div>
+        """, unsafe_allow_html=True)
+
+        url_col, btn_col = st.columns([4, 1])
+        with url_col:
+            url = st.text_input(
+                "URL",
+                placeholder="https://example.com/page",
+                label_visibility="collapsed",
+                key="scrape_url_input",
+            )
+        with btn_col:
+            fetch_clicked = st.button("Fetch Info", type="primary", use_container_width=True, key="fetch_info_btn")
+
+        if fetch_clicked and url.strip():
+            with st.spinner("Fetching & converting to markdown..."):
+                data, err = api("POST", "/scrape", json={"url": url.strip()})
             if err:
                 st.error(err)
             else:
-                st.success(f"✅ Successfully indexed!")
-                c1, c2, c3 = st.columns(3)
-                c1.metric("File ID", data["file_id"][:12] + "…")
-                c2.metric("Pages", data.get("page_count", "—"))
-                c3.metric("Blocks", data.get("block_count", "—"))
-                with st.expander("📄 View Extracted Markdown"):
-                    st.markdown(data.get("content", "*(empty)*"))
-    else:
-        st.markdown("""
-        <div style="text-align:center;padding:1rem 0 0.5rem;">
-          <div style="font-size:0.8rem;color:#9898b8;font-family:Outfit,sans-serif;">PDF files will be processed with full OCR and table detection</div>
-        </div>
-        """, unsafe_allow_html=True)
+                st.session_state["upload_result"] = data
+                st.session_state["show_upload_popup"] = False
+                st.rerun()
+        elif fetch_clicked and not url.strip():
+            st.warning("Please enter a URL first.")
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# SCRAPE PAGE
-# ═══════════════════════════════════════════════════════════════════════════════
-elif page == "🌐  Scrape URL":
-    st.markdown("""
-    <div class="page-header">
-      <div class="page-header-icon">🌐</div>
-      <div>
-        <div class="page-header-title">Scrape URL</div>
-        <div class="page-header-sub">Fetch any public webpage, convert to Markdown and index it</div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    url = st.text_input("Enter URL", placeholder="https://docs.example.com/page")
-
-    if st.button("🚀  Scrape & Index", type="primary", disabled=not url.strip()):
-        with st.spinner("Fetching and processing…"):
-            data, err = api("POST", "/scrape", json={"url": url.strip()})
-        if err:
-            st.error(err)
-        else:
-            st.success(f"✅ Scraped and indexed — `{data['file_id']}`")
-            st.markdown(f"""
-            <div class="glass-card-sm" style="margin:0.5rem 0 1rem;">
-              <span style="font-size:0.75rem;color:#9898b8;font-family:'JetBrains Mono',monospace;">Source: {data.get('source_url', url)}</span>
-            </div>
-            """, unsafe_allow_html=True)
-            with st.expander("📄 Extracted Markdown", expanded=True):
-                st.markdown(data.get("content", "*(empty)*"))
+    # Cancel button
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("Cancel", type="secondary", use_container_width=True):
+        st.session_state["show_upload_popup"] = False
+        st.rerun()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

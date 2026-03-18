@@ -1,7 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import uuid
 import httpx
@@ -41,9 +40,6 @@ FAISS_DIR = STORAGE_DIR / "faiss"
 FAISS_DIR.mkdir(exist_ok=True)
 
 app.mount("/images", StaticFiles(directory=str(IMAGES_DIR)), name="images")
-
-STATIC_DIR = Path(__file__).parent / "static"
-STATIC_DIR.mkdir(exist_ok=True)
 
 # ── OpenAI client
 ai = OpenAI()
@@ -592,9 +588,6 @@ async def startup_event():
 
 @app.get("/")
 def root():
-    index_path = STATIC_DIR / "index.html"
-    if index_path.exists():
-        return FileResponse(str(index_path), media_type="text/html")
     return {"message": "Admin Content Manager API is running"}
 
 
