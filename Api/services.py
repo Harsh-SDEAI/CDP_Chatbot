@@ -21,8 +21,10 @@ from config import (
     get_db_connection, clean_text,
 )
 
-# ── Docling imports removed — using PyMuPDF for PDF and pytesseract for images
-# to avoid OOM from heavy ML models (TableFormer, EasyOCR VGG16)
+# ── Docling imports (PDF / image OCR) ─────────────────────────────────────────
+from docling.document_converter import DocumentConverter, PdfFormatOption, ImageFormatOption
+from docling.datamodel.base_models import InputFormat
+from docling.datamodel.pipeline_options import PdfPipelineOptions, EasyOcrOptions
 
 # ── LlamaIndex imports (chatbot engine) ───────────────────────────────────────
 from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, StorageContext, load_index_from_storage
@@ -603,30 +605,22 @@ def _docling_doc_to_structured_json(doc_dict: Dict[str, Any], file_id: str, file
 
 
 def image_to_docling(img_path: Path, file_id: str, filename: str):
-    """Extract text from image. Uses pytesseract if available, otherwise stores as-is."""
-    print(f"[Image] Processing image {file_id}...")
-    markdown = ""
-    try:
-        import pytesseract
-        from PIL import Image
-        img = Image.open(str(img_path))
-        markdown = pytesseract.image_to_string(img).strip()
-        print(f"[Image] OCR extracted {len(markdown)} chars for {file_id}.")
-    except ImportError:
-        print("[Image] pytesseract not installed — storing image metadata only.")
-        markdown = f"[Image file: {filename}]"
-    except Exception as e:
-        print(f"[Image] OCR failed: {e} — storing image metadata only.")
-        markdown = f"[Image file: {filename}]"
+    print(f"[Docling] Starting image extraction for {file_id}...")
+    pipeline_options = PdfPipelineOptions()
+    pipeline_options.do_ocr = False              # disabled: EasyOCR VGG16 (~400MB) causes OOM on Windows
+    pipeline_options.do_table_structure = False   # disabled: TableFormer model causes OOM on Windows
+    pipeline_options.images_scale = 2.0
 
-    structured_json = {
-        "file_id": file_id,
-        "filename": filename,
-        "page_count": 1,
-        "extracted_at": datetime.utcnow().isoformat() + "Z",
-        "source": {"mime_type": "image", "original_filename": filename},
-        "blocks": [{"type": "paragraph", "text": markdown, "section": None, "pages": [1]}] if markdown else [],
-    }
+    converter = DocumentConverter(
+        format_options={InputFormat.IMAGE: ImageFormatOption(pipeline_options=pipeline_options)}
+    )
+    result = converter.convert(str(img_path))
+    doc_dict = result.document.export_to_dict()
+    print(f"[Docling] Image extraction complete for {file_id}.")
+
+    markdown = _docling_doc_to_markdown(doc_dict)
+    structured_json = _docling_doc_to_structured_json(doc_dict, file_id, filename)
+    structured_json["docling_raw"] = doc_dict
     return markdown, structured_json
 
 
@@ -655,68 +649,97 @@ def docx_to_text(docx_path: Path, file_id: str, filename: str):
     return markdown
 
 
-def pdf_to_docling(pdf_path: Path, file_id: str, filename: str):
-    """Extract text from PDF using PyMuPDF (lightweight, no ML models)."""
-    import fitz
+_PDF_CHUNK_SIZE = 10  # pages per batch – keeps peak RAM in check
 
-    print(f"[PDF] Starting text extraction for {file_id}...")
+
+def _build_pdf_pipeline():
+    pipeline_options = PdfPipelineOptions()
+    pipeline_options.do_ocr = False              # disabled: EasyOCR VGG16 (~400MB) causes OOM on Windows
+    pipeline_options.do_table_structure = False   # disabled: TableFormer model causes OOM on Windows
+    pipeline_options.images_scale = 2.0
+    pipeline_options.generate_picture_images = True
+    return pipeline_options
+
+
+def pdf_to_docling(pdf_path: Path, file_id: str, filename: str):
+    import fitz  # PyMuPDF
+
     doc = fitz.open(str(pdf_path))
     total_pages = len(doc)
-
-    md_parts = []
-    blocks_json = []
-
-    for page_num in range(total_pages):
-        page = doc[page_num]
-        text_blocks = page.get_text("blocks")  # (x0, y0, x1, y1, text, block_no, type)
-
-        for block in text_blocks:
-            if block[6] != 0:  # type 0 = text
-                continue
-            text = block[4].strip()
-            if not text:
-                continue
-            md_parts.append(text)
-            blocks_json.append({
-                "type": "paragraph",
-                "text": text,
-                "section": None,
-                "pages": [page_num + 1],
-            })
-
-        # Extract tables as text
-        tables = page.find_tables()
-        for table in tables:
-            table_data = table.extract()
-            if not table_data:
-                continue
-            # Build markdown table
-            headers = [str(c or "") for c in table_data[0]]
-            md_parts.append("| " + " | ".join(headers) + " |")
-            md_parts.append("| " + " | ".join(["---"] * len(headers)) + " |")
-            for row in table_data[1:]:
-                cells = [str(c or "") for c in row]
-                md_parts.append("| " + " | ".join(cells) + " |")
-            md_parts.append("")
-            blocks_json.append({
-                "type": "table",
-                "headers": headers,
-                "rows": [[str(c or "") for c in row] for row in table_data[1:]],
-                "section": None,
-                "pages": [page_num + 1],
-            })
-
     doc.close()
-    markdown = "\n\n".join(md_parts)
-    structured_json = {
-        "file_id": file_id,
-        "filename": filename,
-        "page_count": total_pages,
-        "extracted_at": datetime.utcnow().isoformat() + "Z",
-        "source": {"mime_type": "application/pdf", "original_filename": filename},
-        "blocks": blocks_json,
-    }
-    print(f"[PDF] Extraction complete for {file_id} ({total_pages} pages, {len(blocks_json)} blocks).")
+    print(f"[Docling] Starting OCR extraction for {file_id} ({total_pages} pages)...")
+
+    if total_pages <= _PDF_CHUNK_SIZE:
+        # Small PDF → single pass (original behaviour)
+        return _convert_pdf_single(pdf_path, file_id, filename)
+
+    # Large PDF → process in chunks of _PDF_CHUNK_SIZE pages
+    return _convert_pdf_chunked(pdf_path, file_id, filename, total_pages)
+
+
+def _convert_pdf_single(pdf_path: Path, file_id: str, filename: str):
+    pipeline_options = _build_pdf_pipeline()
+    converter = DocumentConverter(
+        format_options={"pdf": PdfFormatOption(pipeline_options=pipeline_options)}
+    )
+    result = converter.convert(str(pdf_path))
+    doc_dict = result.document.export_to_dict()
+    print(f"[Docling] Extraction complete for {file_id}.")
+
+    markdown = _docling_doc_to_markdown(doc_dict, pdf_path=pdf_path)
+    structured_json = _docling_doc_to_structured_json(doc_dict, file_id, filename, pdf_path=pdf_path)
+    structured_json["docling_raw"] = doc_dict
+    return markdown, structured_json
+
+
+def _convert_pdf_chunked(pdf_path: Path, file_id: str, filename: str, total_pages: int):
+    """Split a large PDF into temporary chunks, convert each, then merge."""
+    import tempfile, gc
+    import fitz
+
+    all_md_parts = []
+    all_doc_dicts = []
+
+    for start in range(0, total_pages, _PDF_CHUNK_SIZE):
+        end = min(start + _PDF_CHUNK_SIZE, total_pages)
+        print(f"[Docling]   Processing pages {start + 1}-{end} of {total_pages}...")
+
+        # Extract page range into a temp PDF
+        src = fitz.open(str(pdf_path))
+        tmp_pdf = fitz.open()
+        tmp_pdf.insert_pdf(src, from_page=start, to_page=end - 1)
+
+        # On Windows, NamedTemporaryFile keeps the handle open → permission error.
+        # Create the path, close the handle, then save.
+        tmp_fd, tmp_path = tempfile.mkstemp(suffix=".pdf")
+        os.close(tmp_fd)
+        tmp_pdf.save(tmp_path)
+        tmp_pdf.close()
+        src.close()
+
+        pipeline_options = _build_pdf_pipeline()
+        converter = DocumentConverter(
+            format_options={"pdf": PdfFormatOption(pipeline_options=pipeline_options)}
+        )
+        result = converter.convert(tmp_path)
+        doc_dict = result.document.export_to_dict()
+
+        all_md_parts.append(_docling_doc_to_markdown(doc_dict, pdf_path=Path(tmp_path)))
+        all_doc_dicts.append(doc_dict)
+
+        del converter, result
+        gc.collect()
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass  # cleanup is best-effort
+
+    print(f"[Docling] Extraction complete for {file_id}.")
+
+    markdown = "\n\n".join(all_md_parts)
+    # Use the first chunk's dict as the base for structured JSON
+    structured_json = _docling_doc_to_structured_json(all_doc_dicts[0], file_id, filename, pdf_path=pdf_path)
+    structured_json["docling_raw"] = all_doc_dicts
     return markdown, structured_json
 
 
