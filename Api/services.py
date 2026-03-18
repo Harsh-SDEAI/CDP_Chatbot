@@ -607,8 +607,9 @@ def _docling_doc_to_structured_json(doc_dict: Dict[str, Any], file_id: str, file
 def image_to_docling(img_path: Path, file_id: str, filename: str):
     print(f"[Docling] Starting image extraction for {file_id}...")
     pipeline_options = PdfPipelineOptions()
-    pipeline_options.do_ocr = False              # disabled: EasyOCR VGG16 (~400MB) causes OOM on Windows
-    pipeline_options.do_table_structure = False   # disabled: TableFormer model causes OOM on Windows
+    pipeline_options.do_ocr = True
+    pipeline_options.ocr_options = EasyOcrOptions(lang=["en"])
+    pipeline_options.do_table_structure = True
     pipeline_options.images_scale = 2.0
 
     converter = DocumentConverter(
@@ -654,8 +655,9 @@ _PDF_CHUNK_SIZE = 10  # pages per batch – keeps peak RAM in check
 
 def _build_pdf_pipeline():
     pipeline_options = PdfPipelineOptions()
-    pipeline_options.do_ocr = False              # disabled: EasyOCR VGG16 (~400MB) causes OOM on Windows
-    pipeline_options.do_table_structure = False   # disabled: TableFormer model causes OOM on Windows
+    pipeline_options.do_ocr = True
+    pipeline_options.ocr_options = EasyOcrOptions(lang=["en"])
+    pipeline_options.do_table_structure = True
     pipeline_options.images_scale = 2.0
     pipeline_options.generate_picture_images = True
     return pipeline_options
