@@ -3,11 +3,14 @@ Generate a professional PPT comparing Old Approach (QA Pair Review)
 vs New Approach (Content Upload → Markdown → RAG Pipeline).
 """
 
+import os
 from pptx import Presentation
 from pptx.util import Inches, Pt, Emu
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 prs = Presentation()
 prs.slide_width  = Inches(13.333)
@@ -241,6 +244,36 @@ add_bullet_list(slide, Inches(9.3), Inches(4.45), Inches(3.3), Inches(2.5),
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# SLIDE 3b — Old Approach Screenshots
+# ═══════════════════════════════════════════════════════════════════════════════
+slide = prs.slides.add_slide(prs.slide_layouts[6])
+add_bg(slide)
+add_shape(slide, Inches(0), Inches(0), Inches(13.333), Inches(0.06), ORANGE)
+
+add_text(slide, Inches(0.8), Inches(0.4), Inches(10), Inches(0.8),
+         "Old Approach — Screenshots", 36, WHITE, bold=True)
+add_text(slide, Inches(0.8), Inches(1.1), Inches(10), Inches(0.5),
+         "Config Admin panel: Conversation History & QA Pair Review with status management",
+         16, MID_GRAY)
+
+# Left screenshot — Conversation History
+add_shape(slide, Inches(0.4), Inches(1.8), Inches(6.2), Inches(0.5), BG_CARD)
+add_text(slide, Inches(0.6), Inches(1.83), Inches(5.8), Inches(0.5),
+         "CDPGPT Conversation History", 16, ORANGE, bold=True)
+
+ss_path_1 = os.path.join(SCRIPT_DIR, "screenshots", "old_conversation_history.png")
+slide.shapes.add_picture(ss_path_1, Inches(0.4), Inches(2.35), Inches(6.2), Inches(4.6))
+
+# Right screenshot — QA Review with Status
+add_shape(slide, Inches(6.9), Inches(1.8), Inches(6.0), Inches(0.5), BG_CARD)
+add_text(slide, Inches(7.1), Inches(1.83), Inches(5.6), Inches(0.5),
+         "QA Pair Review — Status Dropdown", 16, ORANGE, bold=True)
+
+ss_path_2 = os.path.join(SCRIPT_DIR, "screenshots", "old_qa_review.png")
+slide.shapes.add_picture(ss_path_2, Inches(6.9), Inches(2.35), Inches(6.0), Inches(4.6))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # SLIDE 4 — New Approach (Detailed)
 # ═══════════════════════════════════════════════════════════════════════════════
 slide = prs.slides.add_slide(prs.slide_layouts[6])
@@ -301,6 +334,28 @@ add_bullet_list(slide, Inches(9.3), Inches(4.6), Inches(3.3), Inches(2.5),
         "GPT-4o for answer generation",
         "Top-k configurable (1–20 chunks)",
     ], 13, LIGHT_GRAY, GREEN)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SLIDE 4b — New Approach Screenshot
+# ═══════════════════════════════════════════════════════════════════════════════
+slide = prs.slides.add_slide(prs.slide_layouts[6])
+add_bg(slide)
+add_shape(slide, Inches(0), Inches(0), Inches(13.333), Inches(0.06), ACCENT2)
+
+add_text(slide, Inches(0.8), Inches(0.4), Inches(10), Inches(0.8),
+         "New Approach — Screenshot", 36, WHITE, bold=True)
+add_text(slide, Inches(0.8), Inches(1.1), Inches(10), Inches(0.5),
+         "Content Manager: Upload Content page with URL scrape and Markdown preview",
+         16, MID_GRAY)
+
+# Centered screenshot
+add_shape(slide, Inches(1.0), Inches(1.7), Inches(11.333), Inches(0.5), BG_CARD)
+add_text(slide, Inches(1.2), Inches(1.73), Inches(10.9), Inches(0.5),
+         "Upload Content — URL Scrape with Live Markdown Preview", 16, ACCENT2, bold=True)
+
+ss_path_3 = os.path.join(SCRIPT_DIR, "screenshots", "new_approach.png")
+slide.shapes.add_picture(ss_path_3, Inches(1.0), Inches(2.25), Inches(11.333), Inches(5.0))
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
