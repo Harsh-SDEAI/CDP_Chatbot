@@ -609,7 +609,7 @@ def image_to_docling(img_path: Path, file_id: str, filename: str):
     pipeline_options = PdfPipelineOptions()
     pipeline_options.do_ocr = True
     pipeline_options.ocr_options = EasyOcrOptions()
-    pipeline_options.do_table_structure = True
+    pipeline_options.do_table_structure = False   # disabled: TableFormer model causes OOM on Windows
     pipeline_options.images_scale = 2.0
 
     converter = DocumentConverter(
@@ -657,7 +657,7 @@ def _build_pdf_pipeline():
     pipeline_options = PdfPipelineOptions()
     pipeline_options.do_ocr = True
     pipeline_options.ocr_options = EasyOcrOptions()
-    pipeline_options.do_table_structure = True
+    pipeline_options.do_table_structure = False   # disabled: TableFormer model causes OOM on Windows
     pipeline_options.images_scale = 2.0          # higher scale for better OCR on images
     pipeline_options.generate_picture_images = True
     return pipeline_options
