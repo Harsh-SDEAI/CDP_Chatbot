@@ -761,23 +761,32 @@ elif page == "Upload":
     </div>
     """, unsafe_allow_html=True)
 
-    if "show_upload_popup" not in st.session_state:
-        st.session_state["show_upload_popup"] = False
+    # ── Session state init ──
+    if "upload_mode" not in st.session_state:
+        st.session_state["upload_mode"] = None          # None | "file" | "url"
     if "upload_result" not in st.session_state:
         st.session_state["upload_result"] = None
 
-    # Show result
+    # ── Result view (after successful upload/scrape) ──
     if st.session_state["upload_result"]:
         res = st.session_state["upload_result"]
+        md_name = res.get("filename", "output.md")
+        source_type = "Scraped" if res.get("source_url") or res.get("url") else "Uploaded"
+        source_url  = res.get("source_url") or res.get("url") or ""
+
         st.markdown(f"""
         <div class="card card-success">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-            <span style="font-size:1.1rem;">&#9989;</span>
-            <span style="font-weight:600;font-size:0.95rem;color:var(--text);">Successfully saved</span>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+            <span style="font-size:1.2rem;">&#9989;</span>
+            <span style="font-weight:700;font-size:1rem;color:var(--text);">Successfully converted to Markdown</span>
           </div>
-          <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
-            <span style="font-size:1.1rem;">&#128196;</span>
-            <span style="font-weight:700;font-size:0.95rem;color:var(--text);font-family:'JetBrains Mono',monospace;">{res['filename']}</span>
+          <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
+            <span style="font-size:1.3rem;">&#128196;</span>
+            <div>
+              <div style="font-weight:700;font-size:1rem;color:var(--text);font-family:'JetBrains Mono',monospace;">{md_name}</div>
+              <div style="font-size:0.72rem;color:var(--text-3);margin-top:2px;">{source_type}{(' &middot; ' + source_url) if source_url else ''}</div>
+            </div>
+            <span class="badge {'badge-scraped' if source_url else 'badge-upload'}" style="margin-left:auto;">{source_type}</span>
           </div>
         </div>
         """, unsafe_allow_html=True)
@@ -792,17 +801,19 @@ elif page == "Upload":
 
         if st.button("Upload Another", type="secondary"):
             st.session_state["upload_result"] = None
+            st.session_state["upload_mode"] = None
             st.rerun()
         st.stop()
 
-    # Upload button
+    # ── Main Upload Button ──
     col_btn = st.columns([1, 2, 1])
     with col_btn[1]:
-        if st.button("+ Upload", type="primary", use_container_width=True):
-            st.session_state["show_upload_popup"] = True
+        if st.button("+ Upload", type="primary", use_container_width=True, key="main_upload_btn"):
+            st.session_state["upload_mode"] = "choose"
             st.rerun()
 
-    if not st.session_state["show_upload_popup"]:
+    # ── Empty state when no popup ──
+    if not st.session_state["upload_mode"]:
         st.markdown("""
         <div class="empty-state">
           <div class="empty-icon">&#128194;</div>
@@ -812,7 +823,7 @@ elif page == "Upload":
         """, unsafe_allow_html=True)
         st.stop()
 
-    # Popup
+    # ── Popup: choose mode ──
     st.markdown("""
     <div class="card card-accent">
       <div style="font-weight:700;font-size:1rem;color:var(--text);margin-bottom:2px;">Add Content</div>
@@ -820,9 +831,20 @@ elif page == "Upload":
     </div>
     """, unsafe_allow_html=True)
 
-    tab_file, tab_url = st.tabs(["File Upload", "URL"])
+    opt_col1, opt_col2 = st.columns(2)
+    with opt_col1:
+        if st.button("File Upload", use_container_width=True, type="primary" if st.session_state["upload_mode"] == "file" else "secondary", key="opt_file"):
+            st.session_state["upload_mode"] = "file"
+            st.rerun()
+    with opt_col2:
+        if st.button("URL", use_container_width=True, type="primary" if st.session_state["upload_mode"] == "url" else "secondary", key="opt_url"):
+            st.session_state["upload_mode"] = "url"
+            st.rerun()
 
-    with tab_file:
+    st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+
+    # ── File Upload mode ──
+    if st.session_state["upload_mode"] == "file":
         st.markdown("""
         <div class="info-pill">Supported: <strong>PDF</strong> &middot; <strong>TXT</strong> &middot; <strong>MD</strong> &middot; <strong>PNG</strong> &middot; <strong>JPG</strong> &middot; <strong>WEBP</strong> &middot; <strong>BMP</strong> &middot; <strong>TIFF</strong></div>
         """, unsafe_allow_html=True)
@@ -854,10 +876,11 @@ elif page == "Upload":
                     st.error(err)
                 else:
                     st.session_state["upload_result"] = data
-                    st.session_state["show_upload_popup"] = False
+                    st.session_state["upload_mode"] = None
                     st.rerun()
 
-    with tab_url:
+    # ── URL mode ──
+    elif st.session_state["upload_mode"] == "url":
         st.markdown("""
         <div class="info-pill">Paste a URL and click <strong>Fetch Info</strong> to scrape the page and convert to markdown</div>
         """, unsafe_allow_html=True)
@@ -875,14 +898,14 @@ elif page == "Upload":
                 st.error(err)
             else:
                 st.session_state["upload_result"] = data
-                st.session_state["show_upload_popup"] = False
+                st.session_state["upload_mode"] = None
                 st.rerun()
         elif fetch_clicked and not url.strip():
             st.warning("Please enter a URL first.")
 
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("Cancel", type="secondary", use_container_width=True):
-        st.session_state["show_upload_popup"] = False
+        st.session_state["upload_mode"] = None
         st.rerun()
 
 
