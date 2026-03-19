@@ -850,12 +850,12 @@ elif page == "Upload":
     # ── File Upload mode ──
     if st.session_state["upload_mode"] == "file":
         st.markdown("""
-        <div class="info-pill">Supported: <strong>PDF</strong> &middot; <strong>TXT</strong> &middot; <strong>MD</strong> &middot; <strong>PNG</strong> &middot; <strong>JPG</strong> &middot; <strong>WEBP</strong> &middot; <strong>BMP</strong> &middot; <strong>TIFF</strong></div>
+        <div class="info-pill">Supported: <strong>PDF</strong> &middot; <strong>DOCX</strong> &middot; <strong>DOC</strong> &middot; <strong>TXT</strong> &middot; <strong>MD</strong> &middot; <strong>PNG</strong> &middot; <strong>JPG</strong> &middot; <strong>WEBP</strong> &middot; <strong>BMP</strong> &middot; <strong>TIFF</strong></div>
         """, unsafe_allow_html=True)
 
         uploaded = st.file_uploader(
             "Drop your file here",
-            type=["pdf", "txt", "md", "png", "jpg", "jpeg", "webp", "bmp", "tiff", "tif"],
+            type=["pdf", "docx", "doc", "txt", "md", "png", "jpg", "jpeg", "webp", "bmp", "tiff", "tif"],
             label_visibility="collapsed",
         )
 

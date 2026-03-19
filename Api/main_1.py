@@ -576,6 +576,19 @@ def pdf_to_docling(pdf_path: Path, file_id: str, filename: str):
     return markdown, structured_json
 
 
+def docx_to_docling(docx_path: Path, file_id: str, filename: str):
+    print(f"[Docling] Starting DOCX extraction for {file_id}...")
+    converter = DocumentConverter()
+    result    = converter.convert(str(docx_path))
+    doc_dict  = result.document.export_to_dict()
+    print(f"[Docling] DOCX extraction complete for {file_id}.")
+
+    markdown        = _docling_doc_to_markdown(doc_dict)
+    structured_json = _docling_doc_to_structured_json(doc_dict, file_id, filename)
+    structured_json["docling_raw"] = doc_dict
+    return markdown, structured_json
+
+
 # ─── Startup ──────────────────────────────────────────────────────────────────
 
 @app.on_event("startup")
@@ -628,7 +641,8 @@ async def upload_file(file: UploadFile = File(...)):
     ext      = Path(filename).suffix.lower()
 
     IMAGE_EXTS   = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff", ".tif"}
-    ALLOWED_EXTS = {".pdf", ".txt", ".md"} | IMAGE_EXTS
+    DOCX_EXTS    = {".docx", ".doc"}
+    ALLOWED_EXTS = {".pdf", ".txt", ".md"} | IMAGE_EXTS | DOCX_EXTS
 
     if ext not in ALLOWED_EXTS:
         raise HTTPException(status_code=400, detail=f"Unsupported file type: {ext}")
@@ -661,6 +675,19 @@ async def upload_file(file: UploadFile = File(...)):
         json_path = save_json(file_id, structured_json)
         content   = markdown
         extra     = {"json_path": str(json_path), "page_count": 1, "block_count": len(structured_json.get("blocks", []))}
+
+    elif ext in DOCX_EXTS:
+        tmp_docx = STORAGE_DIR / f"{file_id}_tmp{ext}"
+        tmp_docx.write_bytes(raw_content)
+        try:
+            markdown, structured_json = docx_to_docling(tmp_docx, file_id, filename)
+        finally:
+            tmp_docx.unlink(missing_ok=True)
+
+        save_file(file_id, markdown)
+        json_path = save_json(file_id, structured_json)
+        content   = markdown
+        extra     = {"json_path": str(json_path), "page_count": structured_json.get("page_count", 0), "block_count": len(structured_json.get("blocks", []))}
 
     else:
         content = raw_content.decode("utf-8", errors="replace").strip()
