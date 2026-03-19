@@ -639,6 +639,20 @@ def docx_to_markdown(docx_path: Path, file_id: str, filename: str):
     return markdown
 
 
+def docx_to_docling(docx_path: Path, file_id: str, filename: str):
+    """Convert DOCX using docling (fallback/alternative)."""
+    print(f"[Docling] Starting DOCX extraction for {file_id}...")
+    converter = DocumentConverter()
+    result    = converter.convert(str(docx_path))
+    doc_dict  = result.document.export_to_dict()
+    print(f"[Docling] DOCX extraction complete for {file_id}.")
+
+    markdown        = _docling_doc_to_markdown(doc_dict)
+    structured_json = _docling_doc_to_structured_json(doc_dict, file_id, filename)
+    structured_json["docling_raw"] = doc_dict
+    return markdown, structured_json
+
+
 # ─── Startup ──────────────────────────────────────────────────────────────────
 
 @app.on_event("startup")
