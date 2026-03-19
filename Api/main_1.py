@@ -63,6 +63,10 @@ class ScrapeRequest(BaseModel):
     url: str
 
 
+class SaveContentRequest(BaseModel):
+    file_id: str
+    content: str
+
 class RAGQueryRequest(BaseModel):
     query: str
     top_k: int = 5
@@ -779,6 +783,14 @@ def get_json_content(file_id: str):
         raise HTTPException(status_code=404, detail="JSON extraction not found for this file.")
     return json.loads(json_path.read_text(encoding="utf-8"))
 
+
+@app.put("/content")
+def save_content(body: SaveContentRequest):
+    load_file(body.file_id)
+    save_file(body.file_id, body.content)
+    # Re-index updated content
+    index_document(body.file_id, body.content)
+    return {"file_id": body.file_id, "message": "Content saved and re-indexed successfully"}
 
 
 @app.get("/files")
