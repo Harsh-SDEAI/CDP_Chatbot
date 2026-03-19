@@ -576,17 +576,68 @@ def pdf_to_docling(pdf_path: Path, file_id: str, filename: str):
     return markdown, structured_json
 
 
-def docx_to_docling(docx_path: Path, file_id: str, filename: str):
-    print(f"[Docling] Starting DOCX extraction for {file_id}...")
-    converter = DocumentConverter()
-    result    = converter.convert(str(docx_path))
-    doc_dict  = result.document.export_to_dict()
-    print(f"[Docling] DOCX extraction complete for {file_id}.")
+def docx_to_markdown(docx_path: Path, file_id: str, filename: str):
+    """Convert DOCX to markdown using python-docx."""
+    from docx import Document as DocxDocument
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
 
-    markdown        = _docling_doc_to_markdown(doc_dict)
-    structured_json = _docling_doc_to_structured_json(doc_dict, file_id, filename)
-    structured_json["docling_raw"] = doc_dict
-    return markdown, structured_json
+    print(f"[DOCX] Starting extraction for {file_id}...")
+    doc = DocxDocument(str(docx_path))
+    lines: List[str] = []
+
+    for para in doc.paragraphs:
+        text = para.text.strip()
+        if not text:
+            lines.append("")
+            continue
+
+        style_name = (para.style.name or "").lower()
+
+        # ── Headings ──
+        if style_name.startswith("heading"):
+            try:
+                level = int(style_name.replace("heading", "").strip())
+            except ValueError:
+                level = 1
+            lines.append(f"{'#' * level} {text}")
+
+        # ── Bullet / numbered lists ──
+        elif style_name.startswith("list"):
+            # Check if it's a numbered list
+            if "number" in style_name or "ordered" in style_name:
+                lines.append(f"1. {text}")
+            else:
+                lines.append(f"* {text}")
+
+        # ── Normal paragraph (apply bold/italic from runs) ──
+        else:
+            rich_parts: List[str] = []
+            for run in para.runs:
+                t = run.text
+                if not t:
+                    continue
+                if run.bold and run.italic:
+                    t = f"***{t}***"
+                elif run.bold:
+                    t = f"**{t}**"
+                elif run.italic:
+                    t = f"*{t}*"
+                rich_parts.append(t)
+            lines.append("".join(rich_parts) if rich_parts else text)
+
+    # ── Tables ──
+    for table in doc.tables:
+        lines.append("")
+        for i, row in enumerate(table.rows):
+            cells = [cell.text.strip().replace("\n", " ") for cell in row.cells]
+            lines.append("| " + " | ".join(cells) + " |")
+            if i == 0:
+                lines.append("| " + " | ".join(["---"] * len(cells)) + " |")
+        lines.append("")
+
+    markdown = "\n".join(lines).strip()
+    print(f"[DOCX] Extraction complete for {file_id} ({len(markdown)} chars).")
+    return markdown
 
 
 # ─── Startup ──────────────────────────────────────────────────────────────────
@@ -680,14 +731,12 @@ async def upload_file(file: UploadFile = File(...)):
         tmp_docx = STORAGE_DIR / f"{file_id}_tmp{ext}"
         tmp_docx.write_bytes(raw_content)
         try:
-            markdown, structured_json = docx_to_docling(tmp_docx, file_id, filename)
+            content = docx_to_markdown(tmp_docx, file_id, filename)
         finally:
             tmp_docx.unlink(missing_ok=True)
 
-        save_file(file_id, markdown)
-        json_path = save_json(file_id, structured_json)
-        content   = markdown
-        extra     = {"json_path": str(json_path), "page_count": structured_json.get("page_count", 0), "block_count": len(structured_json.get("blocks", []))}
+        save_file(file_id, content)
+        extra = {}
 
     else:
         content = raw_content.decode("utf-8", errors="replace").strip()
