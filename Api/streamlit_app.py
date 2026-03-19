@@ -738,7 +738,35 @@ if page == "Files":
                 tab_labels = ["Markdown", "Structured JSON"] if has_json else ["Markdown"]
                 tabs = st.tabs(tab_labels)
                 with tabs[0]:
-                    st.markdown(cd.get("content", "*(empty)*"))
+                    # Toggle between view and edit mode
+                    editing = st.session_state.get(f"edit_{fid}", False)
+                    if not editing:
+                        st.markdown(cd.get("content", "*(empty)*"))
+                        if st.button("Edit", key=f"e_{fid}", use_container_width=True):
+                            st.session_state[f"edit_{fid}"] = True
+                            st.rerun()
+                    else:
+                        edited_md = st.text_area(
+                            "Edit Markdown",
+                            value=cd.get("content", ""),
+                            height=400,
+                            key=f"ta_{fid}",
+                        )
+                        save_col, cancel_col = st.columns(2)
+                        with save_col:
+                            if st.button("Save", key=f"s_{fid}", type="primary", use_container_width=True):
+                                save_resp, save_err = api("PUT", "/content", json={"file_id": fid, "content": edited_md})
+                                if save_err:
+                                    st.error(save_err)
+                                else:
+                                    st.success("Saved & re-indexed!")
+                                    st.session_state[f"c_{fid}"]["content"] = edited_md
+                                    st.session_state.pop(f"edit_{fid}", None)
+                                    st.rerun()
+                        with cancel_col:
+                            if st.button("Cancel", key=f"ce_{fid}", use_container_width=True):
+                                st.session_state.pop(f"edit_{fid}", None)
+                                st.rerun()
                 if has_json and len(tabs) > 1:
                     with tabs[1]:
                         jd, je = api("GET", f"/content/{fid}/json")
@@ -748,6 +776,7 @@ if page == "Files":
                             st.json(jd)
                 if st.button("Close", key=f"cl_{fid}"):
                     st.session_state.pop(f"c_{fid}", None)
+                    st.session_state.pop(f"edit_{fid}", None)
                     st.rerun()
 
 
