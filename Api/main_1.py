@@ -867,7 +867,7 @@ def rag_query(body: RAGQueryRequest):
 
     # Ask OpenAI
     response = ai.chat.completions.create(
-        model="gpt-5o-mini",
+        model="gpt-4o-mini",
         max_tokens=3000,
         messages=[
             {
