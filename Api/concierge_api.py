@@ -81,7 +81,7 @@ class UpdateMonitorRequest(BaseModel):
 
 class RAGQueryRequest(BaseModel):
     query: str
-    top_k: int = 10
+    top_k: int = 5
 
 
 # ─── Hashing ─────────────────────────────────────────────────────────────────
@@ -186,41 +186,14 @@ def _get_embedding(text: str) -> np.ndarray:
     return np.array(response.data[0].embedding, dtype=np.float32)
 
 
-def _chunk_text(text: str, chunk_size: int = 1500, overlap: int = 100) -> List[str]:
-    """Split text into chunks, preferring section boundaries (markdown headings
-    or lines wrapped in double underscores like __Section__)."""
-    # Try to split on section headings first
-    section_pattern = r'(?=\n__[^_]+__\n)|(?=\n#{1,4} )'
-    sections = re.split(section_pattern, text)
-    sections = [s for s in sections if s.strip()]
-
-    chunks: List[str] = []
-    current: List[str] = []
-    current_len = 0
-
-    for section in sections:
-        section_words = len(section.split())
-        if current and current_len + section_words > chunk_size:
-            chunks.append("\n".join(current))
-            # Keep last section as overlap for context continuity
-            current = [current[-1]] if overlap and current else []
-            current_len = len(current[0].split()) if current else 0
-        current.append(section)
-        current_len += section_words
-
-    if current:
-        chunks.append("\n".join(current))
-
-    # Fallback: if no sections were detected, use simple word-based chunking
-    if len(chunks) <= 1 and current_len > chunk_size:
-        words = text.split()
-        chunks = []
-        i = 0
-        while i < len(words):
-            chunk = " ".join(words[i:i + chunk_size])
-            chunks.append(chunk)
-            i += chunk_size - overlap
-
+def _chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> List[str]:
+    words = text.split()
+    chunks = []
+    i = 0
+    while i < len(words):
+        chunk = " ".join(words[i:i + chunk_size])
+        chunks.append(chunk)
+        i += chunk_size - overlap
     return chunks
 
 
@@ -655,19 +628,13 @@ def rag_query(body: RAGQueryRequest):
 
     response = ai.chat.completions.create(
         model="gpt-4o",
-        max_tokens=3000,
+        max_tokens=1500,
         messages=[
             {
                 "role": "system",
                 "content": (
                     "You are a helpful assistant for CooperstownConcierge. "
                     "Answer the user's question using ONLY the provided context. "
-                    "IMPORTANT: Reproduce the relevant content from the context as "
-                    "completely and faithfully as possible, preserving the original "
-                    "structure, formatting, headings, bullet points, and details. "
-                    "Do NOT summarize or paraphrase — include ALL relevant details "
-                    "from the context. Use markdown formatting to preserve headings "
-                    "(use **bold** for section titles) and bullet points. "
                     "If the answer is not in the context, say so clearly."
                 ),
             },
