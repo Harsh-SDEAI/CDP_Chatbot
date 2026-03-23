@@ -8,6 +8,7 @@ Runs on port 8001 (separate from the main app on 8000).
 from dotenv import load_dotenv
 load_dotenv()
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -26,7 +27,7 @@ from openai import OpenAI
 import faiss
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-# ── App ───────────────────────────────────────────────────────────────────────
+# ── App (lifespan is defined further below, before routes) ───────────────────
 
 app = FastAPI(title="Concierge Content Monitor & RAG API")
 
@@ -362,20 +363,21 @@ async def check_monitored_urls():
         save_monitored_urls(urls)
 
 
-# ─── Startup / Shutdown ─────────────────────────────────────────────────────
+# ─── Lifespan (startup + shutdown) ───────────────────────────────────────────
 
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app):
+    # Startup
     _load_faiss()
     scheduler.add_job(check_monitored_urls, "interval", hours=1, id="monitor_job")
     scheduler.start()
     print("[Scheduler] Started — checking monitored URLs every 1 hour.")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
+    yield
+    # Shutdown
     scheduler.shutdown(wait=False)
     print("[Scheduler] Shut down.")
+
+app.router.lifespan_context = lifespan
 
 
 # ─── Routes: Health ──────────────────────────────────────────────────────────
@@ -664,4 +666,4 @@ def rag_index_stats():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001, reload=True)
+    uvicorn.run("concierge_api:app", host="0.0.0.0", port=8001, reload=True)
