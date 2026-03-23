@@ -607,7 +607,7 @@ st.sidebar.markdown('<div style="font-size:0.6rem;font-weight:600;text-transform
 
 page = st.sidebar.radio(
     "nav",
-    ["Files", "Upload", "Monitor", "RAG Chat", "Index Tools"],
+    ["Files", "Upload", "RAG Chat", "Index Tools"],
     label_visibility="collapsed",
 )
 
@@ -936,100 +936,6 @@ elif page == "Upload":
     if st.button("Cancel", type="secondary", use_container_width=True):
         st.session_state["upload_mode"] = None
         st.rerun()
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# MONITOR PAGE
-# ═══════════════════════════════════════════════════════════════════════════════
-elif page == "Monitor":
-
-    st.markdown("""
-    <div class="page-hero">
-      <div class="page-hero-icon">&#128344;</div>
-      <div class="page-hero-text">
-        <h1>URL Monitor</h1>
-        <div class="page-hero-sub">Track webpages for changes &mdash; auto-update content &amp; embeddings when they change</div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # ── Add URL to monitor ──
-    st.markdown("#### Add URL to Monitor")
-    mon_col1, mon_col2, mon_col3 = st.columns([4, 1.5, 1])
-    with mon_col1:
-        mon_url = st.text_input("URL", placeholder="https://example.com/page", label_visibility="collapsed", key="monitor_url_input")
-    with mon_col2:
-        interval_options = {"Every 6 hours": 6, "Every 12 hours": 12, "Daily (24h)": 24, "Weekly (168h)": 168}
-        interval_label = st.selectbox("Interval", list(interval_options.keys()), index=2, label_visibility="collapsed", key="monitor_interval")
-    with mon_col3:
-        start_monitor = st.button("Start Monitoring", type="primary", use_container_width=True, key="start_monitor_btn")
-
-    if start_monitor and mon_url.strip():
-        with st.spinner("Scraping URL and adding to monitor..."):
-            data, err = api("POST", "/monitor", json={"url": mon_url.strip(), "interval_hours": interval_options[interval_label]})
-        if err:
-            st.error(err)
-        else:
-            st.success(f"Monitoring started for **{mon_url.strip()}**")
-            st.rerun()
-    elif start_monitor:
-        st.warning("Please enter a URL first.")
-
-    st.markdown("---")
-
-    # ── List monitored URLs ──
-    st.markdown("#### Monitored URLs")
-    check_all = st.button("Check All Now", type="secondary", key="check_all_btn")
-    if check_all:
-        with st.spinner("Checking all monitored URLs..."):
-            data, err = api("POST", "/monitor/check-now")
-        if err:
-            st.error(err)
-        else:
-            for r in data.get("results", []):
-                if r["status"] == "updated":
-                    st.success(f"**{r['url']}** — content updated")
-                elif r["status"] == "unchanged":
-                    st.info(f"**{r['url']}** — no changes")
-                else:
-                    st.warning(f"**{r['url']}** — {r['status']}")
-            st.rerun()
-
-    mon_data, mon_err = api("GET", "/monitor")
-    if mon_err:
-        st.error(mon_err)
-    elif not mon_data:
-        st.info("No URLs being monitored yet. Add one above to get started.")
-    else:
-        for entry in mon_data:
-            with st.container():
-                c1, c2, c3, c4 = st.columns([4, 1.5, 1.5, 1])
-                with c1:
-                    st.markdown(f"**{entry.get('url', 'N/A')}**")
-                    st.caption(f"File: `{entry.get('file_id', '')}` &bull; Last checked: {entry.get('last_checked', 'Never')}")
-                with c2:
-                    hours = entry.get("interval_hours", 24)
-                    if hours <= 6:
-                        st.caption("Every 6 hours")
-                    elif hours <= 12:
-                        st.caption("Every 12 hours")
-                    elif hours <= 24:
-                        st.caption("Daily")
-                    else:
-                        st.caption("Weekly")
-                with c3:
-                    status = entry.get("last_status", "unknown")
-                    if status == "updated":
-                        st.markdown('<span style="color:green;font-weight:600;">Updated</span>', unsafe_allow_html=True)
-                    elif status == "unchanged":
-                        st.markdown('<span style="color:gray;">Unchanged</span>', unsafe_allow_html=True)
-                    else:
-                        st.markdown(f'<span style="color:orange;">{status}</span>', unsafe_allow_html=True)
-                with c4:
-                    if st.button("Remove", key=f"remove_mon_{entry['file_id']}", use_container_width=True):
-                        api("DELETE", f"/monitor/{entry['file_id']}")
-                        st.rerun()
-                st.markdown("---")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
