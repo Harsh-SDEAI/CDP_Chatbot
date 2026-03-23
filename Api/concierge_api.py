@@ -97,16 +97,27 @@ def html_to_markdown(html: str) -> str:
     for tag in soup(["script", "style", "nav", "footer", "header"]):
         tag.decompose()
     lines = []
-    for elem in soup.find_all(["h1", "h2", "h3", "h4", "p", "li", "pre", "blockquote"]):
+    seen_texts = set()
+    for elem in soup.find_all(["h1", "h2", "h3", "h4", "p", "li", "pre", "blockquote",
+                                "dt", "dd", "span", "div", "td", "th", "strong", "em"]):
         tag = elem.name
-        text = elem.get_text(separator=" ", strip=True)
-        if not text:
+        # For block-level containers (div), only take direct text to avoid duplication
+        if tag == "div" and elem.find(["p", "h1", "h2", "h3", "h4", "li", "blockquote"]):
             continue
+        text = elem.get_text(separator=" ", strip=True)
+        if not text or text in seen_texts:
+            continue
+        # Skip very short fragments that are likely navigation or labels
+        if tag in ("span", "div", "td", "th", "strong", "em") and len(text) < 20:
+            continue
+        seen_texts.add(text)
         if tag == "h1":           lines.append(f"# {text}")
         elif tag == "h2":         lines.append(f"## {text}")
         elif tag == "h3":         lines.append(f"### {text}")
         elif tag == "h4":         lines.append(f"#### {text}")
         elif tag == "li":         lines.append(f"- {text}")
+        elif tag == "dt":         lines.append(f"**{text}**")
+        elif tag == "dd":         lines.append(text)
         elif tag == "pre":        lines.append(f"```\n{text}\n```")
         elif tag == "blockquote": lines.append(f"> {text}")
         else:                     lines.append(text)
@@ -633,16 +644,17 @@ def rag_query(body: RAGQueryRequest):
             {
                 "role": "system",
                 "content": (
-                    "You are a concise and accurate assistant for CooperstownConcierge. "
+                    "You are a helpful assistant for CooperstownConcierge. "
                     "Answer the user's question using ONLY the provided context. "
-                    "Rules:\n"
-                    "1. Extract ONLY the specific information that directly answers the question.\n"
-                    "2. Use bullet points (- item) for lists.\n"
-                    "3. Keep answers short and to the point — no introductions, no filler, no extra commentary.\n"
+                    "IMPORTANT RULES:\n"
+                    "1. Reproduce the COMPLETE and FULL answer from the context — include every detail, "
+                    "description, and explanation that is relevant to the question.\n"
+                    "2. Preserve the original structure: headings, sub-items, descriptions, and categories.\n"
+                    "3. Do NOT shorten, skip, or summarize any part of the answer. If the context has "
+                    "descriptions under each item (e.g. Hotels: description, B&Bs: description), "
+                    "include ALL of them fully.\n"
                     "4. Do NOT add information that is not in the context.\n"
-                    "5. If the context contains a clear list or set of items that answers the question, "
-                    "return just that list with a brief one-line lead-in sentence.\n"
-                    "6. If the answer is not in the context, say: 'I don't have that information.'"
+                    "5. If the answer is not in the context, say: 'I don't have that information.'"
                 ),
             },
             {
