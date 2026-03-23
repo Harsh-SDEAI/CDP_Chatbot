@@ -6,15 +6,20 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uuid
 import httpx
+import hashlib
 from bs4 import BeautifulSoup
 from pathlib import Path
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 import shutil
 import numpy as np
 from typing import Any, Dict, List, Optional
 from openai import OpenAI
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import logging
+
+logger = logging.getLogger(__name__)
 
 # ── pip install docling faiss-cpu openai
 from docling.document_converter import DocumentConverter, PdfFormatOption, ImageFormatOption
@@ -57,6 +62,22 @@ _faiss_index: Optional[faiss.IndexFlatL2] = None
 _faiss_meta: List[Dict[str, Any]] = []   # [{file_id, chunk_index, text}, ...]
 
 
+# ─── Monitored URLs ──────────────────────────────────────────────────────────
+MONITOR_PATH = STORAGE_DIR / "monitored_urls.json"
+
+def load_monitored_urls() -> List[dict]:
+    if MONITOR_PATH.exists():
+        return json.loads(MONITOR_PATH.read_text(encoding="utf-8"))
+    return []
+
+def save_monitored_urls(urls: List[dict]):
+    MONITOR_PATH.write_text(json.dumps(urls, ensure_ascii=False, indent=2), encoding="utf-8")
+
+def compute_content_hash(content: str) -> str:
+    return hashlib.sha256(content.encode("utf-8")).hexdigest()
+
+scheduler = AsyncIOScheduler()
+
 # ─── Models ───────────────────────────────────────────────────────────────────
 
 class ScrapeRequest(BaseModel):
@@ -70,6 +91,13 @@ class SaveContentRequest(BaseModel):
 class RAGQueryRequest(BaseModel):
     query: str
     top_k: int = 5
+
+class MonitorRequest(BaseModel):
+    url: str
+    interval_hours: int = 24
+
+class UpdateMonitorRequest(BaseModel):
+    interval_hours: int
 
 
 # ─── FAISS Helpers ────────────────────────────────────────────────────────────
@@ -663,6 +691,57 @@ def docx_to_docling(docx_path: Path, file_id: str, filename: str):
 @app.on_event("startup")
 async def startup_event():
     _load_faiss()
+    scheduler.add_job(check_monitored_urls, "interval", hours=1, id="monitor_check", replace_existing=True)
+    scheduler.start()
+    logger.info("Scheduler started — checking monitored URLs every hour.")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    scheduler.shutdown(wait=False)
+
+async def check_monitored_urls():
+    """Periodic job: re-scrape monitored URLs whose interval has elapsed."""
+    urls = load_monitored_urls()
+    now = datetime.utcnow()
+    changed = False
+    for entry in urls:
+        if not entry.get("enabled", True):
+            continue
+        last_checked = datetime.fromisoformat(entry.get("last_checked", "2000-01-01T00:00:00"))
+        if now - last_checked < timedelta(hours=entry.get("interval_hours", 24)):
+            continue
+        # Time to re-check
+        try:
+            async with httpx.AsyncClient(follow_redirects=True, timeout=20) as client:
+                response = await client.get(
+                    entry["url"],
+                    headers={"User-Agent": "Mozilla/5.0 (compatible; AdminContentBot/1.0)"}
+                )
+                response.raise_for_status()
+            markdown = html_to_markdown(response.text)
+            new_hash = compute_content_hash(markdown)
+            entry["last_checked"] = now.isoformat() + "Z"
+            if new_hash != entry.get("last_hash"):
+                file_id = entry["file_id"]
+                save_file(file_id, markdown)
+                meta = load_meta(file_id)
+                meta["content_hash"] = new_hash
+                meta["last_checked_at"] = now.isoformat() + "Z"
+                save_meta(file_id, meta)
+                index_document(file_id, markdown)
+                entry["last_hash"] = new_hash
+                entry["last_status"] = "updated"
+                logger.info(f"Monitor: content changed for {entry['url']}")
+            else:
+                entry["last_status"] = "unchanged"
+            changed = True
+        except Exception as e:
+            entry["last_status"] = f"error: {str(e)}"
+            entry["last_checked"] = now.isoformat() + "Z"
+            changed = True
+            logger.error(f"Monitor: failed to check {entry['url']}: {e}")
+    if changed:
+        save_monitored_urls(urls)
 
 
 # ─── Routes ───────────────────────────────────────────────────────────────────
@@ -686,19 +765,41 @@ async def scrape_url(body: ScrapeRequest):
 
     markdown = html_to_markdown(response.text)
     file_id  = _make_scrape_filename(body.url)
+    new_hash = compute_content_hash(markdown)
+
+    # Check if content has changed since last scrape
+    existing_meta_path = STORAGE_DIR / f"{file_id}.meta.json"
+    if existing_meta_path.exists():
+        existing_meta = load_meta(file_id)
+        old_hash = existing_meta.get("content_hash")
+        if old_hash and old_hash == new_hash:
+            # Content unchanged — update last_checked_at only
+            existing_meta["last_checked_at"] = datetime.utcnow().isoformat() + "Z"
+            save_meta(file_id, existing_meta)
+            return {
+                "file_id": file_id,
+                "status": "unchanged",
+                "message": "Content has not changed since last scrape.",
+                "filename": f"{file_id}.md",
+                "url": body.url,
+                "source_url": body.url,
+                "content_hash": new_hash,
+            }
 
     save_file(file_id, markdown)
     save_meta(file_id, {
         "type": "scraped",
         "url": body.url,
         "filename": f"{file_id}.md",
-        "created_at": datetime.utcnow().isoformat() + "Z"
+        "content_hash": new_hash,
+        "created_at": datetime.utcnow().isoformat() + "Z",
+        "last_checked_at": datetime.utcnow().isoformat() + "Z",
     })
 
     # Index for RAG
     index_document(file_id, markdown)
 
-    return {"file_id": file_id, "content": markdown, "filename": f"{file_id}.md", "url": body.url, "source_url": body.url}
+    return {"file_id": file_id, "content": markdown, "filename": f"{file_id}.md", "url": body.url, "source_url": body.url, "content_hash": new_hash, "status": "updated"}
 
 
 @app.post("/upload")
@@ -924,6 +1025,105 @@ def rag_remove_from_index(file_id: str):
     """Manually remove a document from the FAISS index."""
     remove_document_from_index(file_id)
     return {"file_id": file_id, "message": "Removed from index."}
+
+
+# ─── Monitor Endpoints ────────────────────────────────────────────────────────
+
+@app.post("/monitor")
+async def add_monitored_url(body: MonitorRequest):
+    """Add a URL to monitoring. Scrapes it immediately and schedules periodic rechecks."""
+    # Scrape immediately
+    scrape_body = ScrapeRequest(url=body.url)
+    result = await scrape_url(scrape_body)
+    file_id = result["file_id"]
+
+    urls = load_monitored_urls()
+    # Check if already monitored
+    for entry in urls:
+        if entry["file_id"] == file_id:
+            entry["interval_hours"] = body.interval_hours
+            entry["enabled"] = True
+            save_monitored_urls(urls)
+            return {"message": "URL already monitored, interval updated.", "file_id": file_id, **result}
+
+    urls.append({
+        "url": body.url,
+        "file_id": file_id,
+        "interval_hours": body.interval_hours,
+        "last_checked": datetime.utcnow().isoformat() + "Z",
+        "last_hash": result.get("content_hash", ""),
+        "last_status": result.get("status", "updated"),
+        "enabled": True,
+    })
+    save_monitored_urls(urls)
+    return {"message": "URL added to monitoring.", "file_id": file_id, **result}
+
+
+@app.get("/monitor")
+def list_monitored_urls():
+    """List all monitored URLs with their status."""
+    return load_monitored_urls()
+
+
+@app.delete("/monitor/{file_id}")
+def remove_monitored_url(file_id: str):
+    """Remove a URL from monitoring."""
+    urls = load_monitored_urls()
+    urls = [u for u in urls if u["file_id"] != file_id]
+    save_monitored_urls(urls)
+    return {"message": "Removed from monitoring.", "file_id": file_id}
+
+
+@app.put("/monitor/{file_id}")
+def update_monitored_url(file_id: str, body: UpdateMonitorRequest):
+    """Update the check interval for a monitored URL."""
+    urls = load_monitored_urls()
+    for entry in urls:
+        if entry["file_id"] == file_id:
+            entry["interval_hours"] = body.interval_hours
+            save_monitored_urls(urls)
+            return {"message": "Interval updated.", "file_id": file_id, "interval_hours": body.interval_hours}
+    raise HTTPException(status_code=404, detail="Monitored URL not found.")
+
+
+@app.post("/monitor/check-now")
+async def check_all_now():
+    """Trigger an immediate recheck of all monitored URLs."""
+    urls = load_monitored_urls()
+    results = []
+    now = datetime.utcnow()
+    for entry in urls:
+        if not entry.get("enabled", True):
+            continue
+        try:
+            async with httpx.AsyncClient(follow_redirects=True, timeout=20) as client:
+                response = await client.get(
+                    entry["url"],
+                    headers={"User-Agent": "Mozilla/5.0 (compatible; AdminContentBot/1.0)"}
+                )
+                response.raise_for_status()
+            markdown = html_to_markdown(response.text)
+            new_hash = compute_content_hash(markdown)
+            entry["last_checked"] = now.isoformat() + "Z"
+            if new_hash != entry.get("last_hash"):
+                file_id = entry["file_id"]
+                save_file(file_id, markdown)
+                meta = load_meta(file_id)
+                meta["content_hash"] = new_hash
+                meta["last_checked_at"] = now.isoformat() + "Z"
+                save_meta(file_id, meta)
+                index_document(file_id, markdown)
+                entry["last_hash"] = new_hash
+                entry["last_status"] = "updated"
+            else:
+                entry["last_status"] = "unchanged"
+            results.append({"url": entry["url"], "file_id": entry["file_id"], "status": entry["last_status"]})
+        except Exception as e:
+            entry["last_status"] = f"error: {str(e)}"
+            entry["last_checked"] = now.isoformat() + "Z"
+            results.append({"url": entry["url"], "file_id": entry["file_id"], "status": entry["last_status"]})
+    save_monitored_urls(urls)
+    return {"message": f"Checked {len(results)} URLs.", "results": results}
 
 
 if __name__ == "__main__":
