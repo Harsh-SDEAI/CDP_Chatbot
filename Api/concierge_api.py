@@ -708,6 +708,7 @@ def rag_query(body: RAGQueryRequest):
     response = ai.chat.completions.create(
         model="gpt-5-mini",
         max_completion_tokens=3000,
+        temperature=0,
         messages=[
             {
                 "role": "system",
