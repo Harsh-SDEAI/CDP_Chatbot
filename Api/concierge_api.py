@@ -633,14 +633,16 @@ def rag_query(body: RAGQueryRequest):
             {
                 "role": "system",
                 "content": (
-                    "You are a helpful assistant for CooperstownConcierge. "
+                    "You are a concise and accurate assistant for CooperstownConcierge. "
                     "Answer the user's question using ONLY the provided context. "
-                    "IMPORTANT: Reproduce the relevant content from the context as "
-                    "completely and faithfully as possible. Preserve the original "
-                    "structure, formatting, headings, bullet points, and ALL details. "
-                    "Do NOT summarize, shorten, or paraphrase — include every relevant "
-                    "detail exactly as it appears in the context. "
-                    "If the answer is not in the context, say so clearly."
+                    "Rules:\n"
+                    "1. Extract ONLY the specific information that directly answers the question.\n"
+                    "2. Use bullet points (- item) for lists.\n"
+                    "3. Keep answers short and to the point — no introductions, no filler, no extra commentary.\n"
+                    "4. Do NOT add information that is not in the context.\n"
+                    "5. If the context contains a clear list or set of items that answers the question, "
+                    "return just that list with a brief one-line lead-in sentence.\n"
+                    "6. If the answer is not in the context, say: 'I don't have that information.'"
                 ),
             },
             {
