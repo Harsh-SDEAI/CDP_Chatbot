@@ -628,13 +628,18 @@ def rag_query(body: RAGQueryRequest):
 
     response = ai.chat.completions.create(
         model="gpt-4o",
-        max_tokens=1500,
+        max_tokens=3000,
         messages=[
             {
                 "role": "system",
                 "content": (
                     "You are a helpful assistant for CooperstownConcierge. "
                     "Answer the user's question using ONLY the provided context. "
+                    "IMPORTANT: Reproduce the relevant content from the context as "
+                    "completely and faithfully as possible. Preserve the original "
+                    "structure, formatting, headings, bullet points, and ALL details. "
+                    "Do NOT summarize, shorten, or paraphrase — include every relevant "
+                    "detail exactly as it appears in the context. "
                     "If the answer is not in the context, say so clearly."
                 ),
             },
