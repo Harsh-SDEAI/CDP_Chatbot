@@ -17,33 +17,33 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Clean Light Theme CSS ─────────────────────────────────────────────────────
+# ── Dark Grey Theme CSS ───────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-    --bg:             #f8f9fa;
-    --bg-2:           #ffffff;
-    --surface:        rgba(255,255,255,0.80);
-    --surface-2:      rgba(0,0,0,0.02);
-    --surface-3:      rgba(0,0,0,0.04);
-    --border:         rgba(0,0,0,0.06);
-    --border-2:       rgba(0,0,0,0.10);
-    --border-3:       rgba(0,0,0,0.14);
-    --text:           #1a1a1a;
-    --text-2:         #555555;
-    --text-3:         #999999;
-    --accent:         #555555;
-    --green:          #2d8a56;
-    --green-bg:       rgba(45,138,86,0.08);
-    --red:            #d44;
-    --red-bg:         rgba(221,68,68,0.06);
-    --orange:         #c67b1a;
+    --bg:             #1e1e2e;
+    --bg-2:           #2a2a3c;
+    --surface:        rgba(42,42,60,0.80);
+    --surface-2:      rgba(255,255,255,0.03);
+    --surface-3:      rgba(255,255,255,0.06);
+    --border:         rgba(255,255,255,0.08);
+    --border-2:       rgba(255,255,255,0.12);
+    --border-3:       rgba(255,255,255,0.18);
+    --text:           #e8e8ef;
+    --text-2:         #b0b0c0;
+    --text-3:         #7a7a90;
+    --accent:         #b0b0c0;
+    --green:          #4eca7a;
+    --green-bg:       rgba(78,202,122,0.12);
+    --red:            #f06060;
+    --red-bg:         rgba(240,96,96,0.10);
+    --orange:         #e8a84a;
     --radius:         10px;
     --radius-lg:      14px;
-    --shadow-sm:      0 1px 2px rgba(0,0,0,0.04);
-    --shadow:         0 2px 8px rgba(0,0,0,0.06);
+    --shadow-sm:      0 1px 2px rgba(0,0,0,0.20);
+    --shadow:         0 2px 8px rgba(0,0,0,0.30);
 }
 
 html, body, [class*="css"], .stApp, .main {
@@ -91,7 +91,7 @@ h3 { font-size: 0.95rem !important; font-weight: 600 !important; }
 }
 .status-new       { background: var(--green-bg); color: var(--green); }
 .status-unchanged { background: var(--surface-3); color: var(--text-3); }
-.status-updated   { background: rgba(59,130,246,0.1); color: #2563eb; }
+.status-updated   { background: rgba(96,165,250,0.15); color: #60a5fa; }
 .status-error     { background: var(--red-bg); color: var(--red); }
 
 .monitor-card {

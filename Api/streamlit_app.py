@@ -11,38 +11,38 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Clean Light Theme CSS ─────────────────────────────────────────────────────
+# ── Dark Grey Theme CSS ───────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-    --bg:             #f8f9fa;
-    --bg-2:           #ffffff;
-    --surface:        rgba(255,255,255,0.80);
-    --surface-2:      rgba(0,0,0,0.02);
-    --surface-3:      rgba(0,0,0,0.04);
-    --border:         rgba(0,0,0,0.06);
-    --border-2:       rgba(0,0,0,0.10);
-    --border-3:       rgba(0,0,0,0.14);
-    --text:           #1a1a1a;
-    --text-2:         #555555;
-    --text-3:         #999999;
-    --accent:         #555555;
-    --accent-2:       #333333;
-    --accent-bg:      rgba(0,0,0,0.03);
-    --accent-bg-2:    rgba(0,0,0,0.06);
-    --green:          #2d8a56;
-    --green-bg:       rgba(45,138,86,0.08);
-    --red:            #d44;
-    --red-bg:         rgba(221,68,68,0.06);
-    --orange:         #c67b1a;
+    --bg:             #1e1e2e;
+    --bg-2:           #2a2a3c;
+    --surface:        rgba(42,42,60,0.80);
+    --surface-2:      rgba(255,255,255,0.03);
+    --surface-3:      rgba(255,255,255,0.06);
+    --border:         rgba(255,255,255,0.08);
+    --border-2:       rgba(255,255,255,0.12);
+    --border-3:       rgba(255,255,255,0.18);
+    --text:           #e8e8ef;
+    --text-2:         #b0b0c0;
+    --text-3:         #7a7a90;
+    --accent:         #b0b0c0;
+    --accent-2:       #d0d0dd;
+    --accent-bg:      rgba(255,255,255,0.04);
+    --accent-bg-2:    rgba(255,255,255,0.08);
+    --green:          #4eca7a;
+    --green-bg:       rgba(78,202,122,0.12);
+    --red:            #f06060;
+    --red-bg:         rgba(240,96,96,0.10);
+    --orange:         #e8a84a;
     --radius:         10px;
     --radius-lg:      14px;
     --radius-xl:      18px;
-    --shadow-sm:      0 1px 2px rgba(0,0,0,0.04);
-    --shadow:         0 2px 8px rgba(0,0,0,0.06);
-    --shadow-lg:      0 4px 16px rgba(0,0,0,0.08);
+    --shadow-sm:      0 1px 2px rgba(0,0,0,0.20);
+    --shadow:         0 2px 8px rgba(0,0,0,0.30);
+    --shadow-lg:      0 4px 16px rgba(0,0,0,0.40);
 }
 
 /* ── Base ── */
@@ -124,15 +124,15 @@ p, li { color: var(--text-2) !important; }
     letter-spacing: -0.01em !important;
 }
 .stButton > button[kind="primary"] {
-    background: #e8e8ec !important;
-    border: 1px solid #d0d0d8 !important;
-    color: #333 !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+    background: #3a3a50 !important;
+    border: 1px solid #4a4a62 !important;
+    color: #e8e8ef !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.20) !important;
 }
 .stButton > button[kind="primary"]:hover {
-    background: #d8d8de !important;
-    border-color: #b8b8c2 !important;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
+    background: #4a4a62 !important;
+    border-color: #5a5a72 !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.30) !important;
     transform: translateY(-0.5px) !important;
 }
 .stButton > button[kind="primary"]:active { transform: translateY(0) !important; }
@@ -243,7 +243,7 @@ p, li { color: var(--text-2) !important; }
 hr { border-color: var(--border) !important; margin: 1.5rem 0 !important; }
 
 /* ── Slider ── */
-[data-testid="stSlider"] [data-baseweb="slider"] [role="slider"] { background: #c0c0c8 !important; }
+[data-testid="stSlider"] [data-baseweb="slider"] [role="slider"] { background: #5a5a72 !important; }
 
 /* ══ Custom Components ══ */
 
@@ -257,8 +257,8 @@ hr { border-color: var(--border) !important; margin: 1.5rem 0 !important; }
 }
 .page-hero-icon {
     width: 44px; height: 44px;
-    background: #ededf0;
-    border: 1px solid #dddde2;
+    background: #3a3a50;
+    border: 1px solid #4a4a62;
     border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
     font-size: 1.2rem;
@@ -415,9 +415,9 @@ hr { border-color: var(--border) !important; margin: 1.5rem 0 !important; }
 }
 .chat-avatar {
     width: 36px; height: 36px; border-radius: 10px;
-    background: #d0d0d8;
+    background: #3a3a50;
     display: flex; align-items: center; justify-content: center;
-    font-size: 0.85rem; color: #555; font-weight: 700;
+    font-size: 0.85rem; color: #b0b0c0; font-weight: 700;
 }
 .chat-header-name {
     font-weight: 600; font-size: 0.9rem;
@@ -454,17 +454,17 @@ hr { border-color: var(--border) !important; margin: 1.5rem 0 !important; }
 
 .msg-user { display: flex; justify-content: flex-end; gap: 8px; align-items: flex-end; }
 .msg-user-bubble {
-    background: #e0e0e6;
-    color: #333; padding: 9px 14px;
+    background: #3a3a50;
+    color: #e8e8ef; padding: 9px 14px;
     border-radius: 14px 14px 4px 14px;
     font-size: 0.86rem; max-width: 70%;
     line-height: 1.55; font-family: 'Inter', sans-serif;
 }
 .msg-user-av {
     width: 26px; height: 26px; border-radius: 50%;
-    background: #d0d0d8;
+    background: #3a3a50;
     display: flex; align-items: center; justify-content: center;
-    font-size: 0.65rem; color: #555; font-weight: 600; flex-shrink: 0;
+    font-size: 0.65rem; color: #b0b0c0; font-weight: 600; flex-shrink: 0;
 }
 
 .msg-bot { display: flex; justify-content: flex-start; gap: 8px; align-items: flex-end; }
@@ -593,17 +593,17 @@ def md_to_html(text):
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 st.sidebar.markdown("""
 <div style="padding:0.25rem 0.5rem 1.25rem;display:flex;align-items:center;gap:11px;">
-  <div style="width:36px;height:36px;background:#d0d0d8;border-radius:10px;display:flex;align-items:center;justify-content:center;">
-    <span style="color:#555;font-weight:700;font-size:0.85rem;font-family:Inter,sans-serif;">C</span>
+  <div style="width:36px;height:36px;background:#3a3a50;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+    <span style="color:#b0b0c0;font-weight:700;font-size:0.85rem;font-family:Inter,sans-serif;">C</span>
   </div>
   <div>
-    <div style="font-weight:700;font-size:0.95rem;color:#1a1a1a;font-family:Inter,sans-serif;letter-spacing:-0.02em;">Content Manager</div>
-    <div style="font-size:0.66rem;color:#999;font-family:'JetBrains Mono',monospace;">FAISS &middot; GPT-4o &middot; Docling</div>
+    <div style="font-weight:700;font-size:0.95rem;color:#e8e8ef;font-family:Inter,sans-serif;letter-spacing:-0.02em;">Content Manager</div>
+    <div style="font-size:0.66rem;color:#7a7a90;font-family:'JetBrains Mono',monospace;">FAISS &middot; GPT-4o &middot; Docling</div>
   </div>
 </div>
 """, unsafe_allow_html=True)
 
-st.sidebar.markdown('<div style="font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#999;padding:0 0.5rem 0.4rem;font-family:Inter,sans-serif;">Navigation</div>', unsafe_allow_html=True)
+st.sidebar.markdown('<div style="font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#7a7a90;padding:0 0.5rem 0.4rem;font-family:Inter,sans-serif;">Navigation</div>', unsafe_allow_html=True)
 
 page = st.sidebar.radio(
     "nav",
@@ -617,15 +617,15 @@ if stats_side:
     st.sidebar.markdown("---")
     st.sidebar.markdown(f"""
     <div style="padding:0 0.5rem;">
-      <div style="font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#999;margin-bottom:8px;font-family:Inter,sans-serif;">Index Status</div>
+      <div style="font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#7a7a90;margin-bottom:8px;font-family:Inter,sans-serif;">Index Status</div>
       <div style="display:flex;gap:6px;">
-        <div style="flex:1;background:#f8f9fa;border:1px solid rgba(0,0,0,0.06);border-radius:8px;padding:8px 10px;">
-          <div style="font-size:1.3rem;font-weight:800;color:#1a1a1a;font-family:Inter,sans-serif;letter-spacing:-0.03em;">{stats_side.get('total_documents',0)}</div>
-          <div style="font-size:0.58rem;color:#999;font-family:Inter,sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Docs</div>
+        <div style="flex:1;background:#1e1e2e;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 10px;">
+          <div style="font-size:1.3rem;font-weight:800;color:#e8e8ef;font-family:Inter,sans-serif;letter-spacing:-0.03em;">{stats_side.get('total_documents',0)}</div>
+          <div style="font-size:0.58rem;color:#7a7a90;font-family:Inter,sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Docs</div>
         </div>
-        <div style="flex:1;background:#f8f9fa;border:1px solid rgba(0,0,0,0.06);border-radius:8px;padding:8px 10px;">
-          <div style="font-size:1.3rem;font-weight:800;color:#1a1a1a;font-family:Inter,sans-serif;letter-spacing:-0.03em;">{stats_side.get('total_vectors',0)}</div>
-          <div style="font-size:0.58rem;color:#999;font-family:Inter,sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Vectors</div>
+        <div style="flex:1;background:#1e1e2e;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 10px;">
+          <div style="font-size:1.3rem;font-weight:800;color:#e8e8ef;font-family:Inter,sans-serif;letter-spacing:-0.03em;">{stats_side.get('total_vectors',0)}</div>
+          <div style="font-size:0.58rem;color:#7a7a90;font-family:Inter,sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Vectors</div>
         </div>
       </div>
     </div>
