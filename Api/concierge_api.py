@@ -94,35 +94,44 @@ def compute_content_hash(content: str) -> str:
 
 def html_to_markdown(html: str) -> str:
     soup = BeautifulSoup(html, "html.parser")
-    for tag in soup(["script", "style", "nav", "footer", "header"]):
+    for tag in soup(["script", "style", "nav", "footer", "header", "noscript", "iframe"]):
         tag.decompose()
+
+    # Use the full body text to ensure nothing is missed.
+    # Walk the tree in document order and apply minimal markdown formatting.
     lines = []
-    seen_texts = set()
-    for elem in soup.find_all(["h1", "h2", "h3", "h4", "p", "li", "pre", "blockquote",
-                                "dt", "dd", "span", "div", "td", "th", "strong", "em"]):
-        tag = elem.name
-        # For block-level containers (div), only take direct text to avoid duplication
-        if tag == "div" and elem.find(["p", "h1", "h2", "h3", "h4", "li", "blockquote"]):
+    body = soup.body or soup
+
+    for elem in body.descendants:
+        if elem.name is None:
+            # NavigableString — skip whitespace-only
             continue
-        text = elem.get_text(separator=" ", strip=True)
-        if not text or text in seen_texts:
-            continue
-        # Skip very short fragments that are likely navigation or labels
-        if tag in ("span", "div", "td", "th", "strong", "em") and len(text) < 20:
-            continue
-        seen_texts.add(text)
-        if tag == "h1":           lines.append(f"# {text}")
-        elif tag == "h2":         lines.append(f"## {text}")
-        elif tag == "h3":         lines.append(f"### {text}")
-        elif tag == "h4":         lines.append(f"#### {text}")
-        elif tag == "li":         lines.append(f"- {text}")
-        elif tag == "dt":         lines.append(f"**{text}**")
-        elif tag == "dd":         lines.append(text)
-        elif tag == "pre":        lines.append(f"```\n{text}\n```")
-        elif tag == "blockquote": lines.append(f"> {text}")
-        else:                     lines.append(text)
-        lines.append("")
-    return "\n".join(lines).strip()
+        # Only process leaf-level block/inline elements that carry text
+        if elem.name in ("h1", "h2", "h3", "h4", "h5", "h6",
+                         "p", "li", "pre", "blockquote", "dt", "dd",
+                         "td", "th", "figcaption", "label", "summary"):
+            text = elem.get_text(separator=" ", strip=True)
+            if not text:
+                continue
+            tag = elem.name
+            if tag in ("h1",):               lines.append(f"# {text}")
+            elif tag in ("h2",):             lines.append(f"## {text}")
+            elif tag in ("h3",):             lines.append(f"### {text}")
+            elif tag in ("h4", "h5", "h6"):  lines.append(f"#### {text}")
+            elif tag == "li":                lines.append(f"- {text}")
+            elif tag == "dt":                lines.append(f"**{text}**")
+            elif tag == "pre":               lines.append(f"```\n{text}\n```")
+            elif tag == "blockquote":        lines.append(f"> {text}")
+            else:                            lines.append(text)
+            lines.append("")
+
+    result = "\n".join(lines).strip()
+
+    # Fallback: if tag-based extraction got very little, use full body text
+    if len(result) < 200:
+        result = body.get_text(separator="\n", strip=True)
+
+    return result
 
 
 # ─── Storage Helpers ─────────────────────────────────────────────────────────
