@@ -97,39 +97,55 @@ def html_to_markdown(html: str) -> str:
     for tag in soup(["script", "style", "nav", "footer", "header", "noscript", "iframe"]):
         tag.decompose()
 
-    # Use the full body text to ensure nothing is missed.
-    # Walk the tree in document order and apply minimal markdown formatting.
-    lines = []
     body = soup.body or soup
+
+    # Primary strategy: extract full visible text from body.
+    # This ensures NO content is missed regardless of HTML structure.
+    # We apply light formatting by first trying structured extraction,
+    # then appending any text that was missed.
+    structured_lines = []
+    structured_texts = set()
 
     for elem in body.descendants:
         if elem.name is None:
-            # NavigableString — skip whitespace-only
             continue
-        # Only process leaf-level block/inline elements that carry text
         if elem.name in ("h1", "h2", "h3", "h4", "h5", "h6",
                          "p", "li", "pre", "blockquote", "dt", "dd",
                          "td", "th", "figcaption", "label", "summary"):
             text = elem.get_text(separator=" ", strip=True)
             if not text:
                 continue
+            structured_texts.add(text)
             tag = elem.name
-            if tag in ("h1",):               lines.append(f"# {text}")
-            elif tag in ("h2",):             lines.append(f"## {text}")
-            elif tag in ("h3",):             lines.append(f"### {text}")
-            elif tag in ("h4", "h5", "h6"):  lines.append(f"#### {text}")
-            elif tag == "li":                lines.append(f"- {text}")
-            elif tag == "dt":                lines.append(f"**{text}**")
-            elif tag == "pre":               lines.append(f"```\n{text}\n```")
-            elif tag == "blockquote":        lines.append(f"> {text}")
-            else:                            lines.append(text)
-            lines.append("")
+            if tag in ("h1",):               structured_lines.append(f"# {text}")
+            elif tag in ("h2",):             structured_lines.append(f"## {text}")
+            elif tag in ("h3",):             structured_lines.append(f"### {text}")
+            elif tag in ("h4", "h5", "h6"):  structured_lines.append(f"#### {text}")
+            elif tag == "li":                structured_lines.append(f"- {text}")
+            elif tag == "dt":                structured_lines.append(f"**{text}**")
+            elif tag == "pre":               structured_lines.append(f"```\n{text}\n```")
+            elif tag == "blockquote":        structured_lines.append(f"> {text}")
+            else:                            structured_lines.append(text)
+            structured_lines.append("")
 
-    result = "\n".join(lines).strip()
+    # Now get ALL visible text and find any lines missed by structured extraction
+    full_text = body.get_text(separator="\n", strip=True)
+    missed_lines = []
+    for line in full_text.split("\n"):
+        line = line.strip()
+        if not line or len(line) < 10:
+            continue
+        # Check if this line's content is already captured
+        if not any(line in s or s in line for s in structured_texts):
+            missed_lines.append(line)
 
-    # Fallback: if tag-based extraction got very little, use full body text
+    result = "\n".join(structured_lines).strip()
+    if missed_lines:
+        result += "\n\n" + "\n".join(missed_lines)
+
+    # Final fallback
     if len(result) < 200:
-        result = body.get_text(separator="\n", strip=True)
+        result = full_text
 
     return result
 
@@ -274,7 +290,7 @@ def remove_document_from_index(file_id: str):
     print(f"[FAISS] Removed chunks for {file_id}, index now has {_faiss_index.ntotal} vectors.")
 
 
-def search_index(query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+def search_index(query: str, top_k: int = 10) -> List[Dict[str, Any]]:
     if _faiss_index is None or _faiss_index.ntotal == 0:
         return []
 
@@ -453,6 +469,32 @@ async def scrape_url(body: ScrapeRequest):
         "content": markdown,
         "filename": f"{file_id}.md",
         "url": body.url,
+    }
+
+
+# ─── Routes: Debug ───────────────────────────────────────────────────────────
+
+@app.get("/debug/chunks/{file_id}")
+def debug_chunks(file_id: str):
+    """Return all indexed chunks for a given file_id so you can inspect what was stored."""
+    chunks = [m for m in _faiss_meta if m["file_id"] == file_id]
+    return {
+        "file_id": file_id,
+        "total_chunks": len(chunks),
+        "chunks": [{"index": c["chunk_index"], "text_preview": c["text"][:500]} for c in chunks],
+    }
+
+
+@app.get("/debug/search")
+def debug_search(query: str, top_k: int = 10):
+    """Search the index and return chunks with scores for debugging."""
+    chunks = search_index(query, top_k=top_k)
+    return {
+        "query": query,
+        "results": [
+            {"file_id": c["file_id"], "score": c["score"], "text_preview": c["text"][:500]}
+            for c in chunks
+        ],
     }
 
 
