@@ -107,7 +107,7 @@ def html_to_markdown(html: str) -> str:
     }
 
     lines = []
-    seen_texts = set()
+    prev_text = None
 
     for elem in body.descendants:
         if elem.name is None or elem.name not in BLOCK_TAGS:
@@ -116,10 +116,11 @@ def html_to_markdown(html: str) -> str:
         text = elem.get_text(separator=" ", strip=True)
         if not text or len(text) < 3:
             continue
-        if text in seen_texts:
+        # Only skip consecutive duplicates, not repeated content across sections
+        if text == prev_text:
             continue
 
-        seen_texts.add(text)
+        prev_text = text
 
         tag = elem.name
         if tag == "h1":               lines.append(f"# {text}")
