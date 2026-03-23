@@ -99,50 +99,27 @@ def html_to_markdown(html: str) -> str:
 
     body = soup.body or soup
 
-    # Walk the DOM tree in document order to preserve Q&A pairing.
-    # We track which elements have been rendered to avoid duplication
-    # (e.g. a <p> inside a <li> should not be emitted twice).
+    # ── Primary approach: walk block-level elements in document order ──
     BLOCK_TAGS = {
         "h1", "h2", "h3", "h4", "h5", "h6",
         "p", "li", "pre", "blockquote", "dt", "dd",
         "td", "th", "figcaption", "label", "summary",
-        "button", "a", "span", "div",
     }
-    FORMAT_TAGS = {"h1", "h2", "h3", "h4", "h5", "h6",
-                   "p", "li", "pre", "blockquote", "dt", "dd",
-                   "summary", "figcaption", "label"}
 
     lines = []
     seen_texts = set()
-    rendered_elems = set()
 
     for elem in body.descendants:
-        if elem.name is None:
-            continue
-        # Skip if a parent was already rendered (avoid duplication)
-        if any(p in rendered_elems for p in elem.parents):
-            continue
-        if elem.name not in BLOCK_TAGS:
+        if elem.name is None or elem.name not in BLOCK_TAGS:
             continue
 
         text = elem.get_text(separator=" ", strip=True)
         if not text or len(text) < 3:
             continue
-        # Skip if we already captured this exact text
         if text in seen_texts:
             continue
 
-        # For generic tags (div/span/button/a), only emit if they are leaf-like
-        # (no child block elements) to avoid duplicating container text
-        if elem.name not in FORMAT_TAGS:
-            has_block_child = any(
-                child.name in FORMAT_TAGS for child in elem.descendants if child.name
-            )
-            if has_block_child:
-                continue
-
         seen_texts.add(text)
-        rendered_elems.add(elem)
 
         tag = elem.name
         if tag == "h1":               lines.append(f"# {text}")
@@ -159,9 +136,9 @@ def html_to_markdown(html: str) -> str:
 
     result = "\n".join(lines).strip()
 
-    # Final fallback — if structured walk missed most content
+    # Fallback — if structured walk missed most content, use full text
     full_text = body.get_text(separator="\n", strip=True)
-    if len(result) < 200 and len(full_text) > 200:
+    if len(result) < len(full_text) * 0.5:
         result = full_text
 
     return result
