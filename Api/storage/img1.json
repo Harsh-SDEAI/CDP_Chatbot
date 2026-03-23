@@ -1,0 +1,515 @@
+{
+  "file_id": "img1",
+  "filename": "img1.jpg",
+  "page_count": 1,
+  "extracted_at": "2026-03-18T11:04:03.049640Z",
+  "source": {
+    "mime_type": "application/pdf",
+    "original_filename": "img1_tmp.jpg"
+  },
+  "blocks": [
+    {
+      "type": "section_header",
+      "text": "A4 Size Four Page Food Menu Vector Template",
+      "section": "A4 Size Four Page Food Menu Vector Template",
+      "pages": [
+        1
+      ]
+    },
+    {
+      "type": "picture",
+      "captions": [],
+      "ocr_text": [
+        "ME",
+        "NU"
+      ],
+      "section": "A4 Size Four Page Food Menu Vector Template",
+      "pages": [
+        1
+      ]
+    },
+    {
+      "type": "picture",
+      "captions": [],
+      "ocr_text": [
+        "MAIN DISH"
+      ],
+      "section": "A4 Size Four Page Food Menu Vector Template",
+      "pages": [
+        1
+      ]
+    },
+    {
+      "type": "picture",
+      "captions": [],
+      "ocr_text": [
+        "NEW DISH"
+      ],
+      "section": "A4 Size Four Page Food Menu Vector Template",
+      "pages": [
+        1
+      ]
+    },
+    {
+      "type": "picture",
+      "captions": [],
+      "ocr_text": [
+        "SINCE",
+        "28",
+        "SEA FOOD"
+      ],
+      "section": "A4 Size Four Page Food Menu Vector Template",
+      "pages": [
+        1
+      ]
+    }
+  ],
+  "docling_raw": {
+    "schema_name": "DoclingDocument",
+    "version": "1.10.0",
+    "name": "img1_tmp",
+    "origin": {
+      "mimetype": "application/pdf",
+      "binary_hash": 1813009748985937047,
+      "filename": "img1_tmp.jpg"
+    },
+    "furniture": {
+      "self_ref": "#/furniture",
+      "children": [],
+      "content_layer": "furniture",
+      "name": "_root_",
+      "label": "unspecified"
+    },
+    "body": {
+      "self_ref": "#/body",
+      "children": [
+        {
+          "$ref": "#/texts/0"
+        },
+        {
+          "$ref": "#/pictures/0"
+        },
+        {
+          "$ref": "#/pictures/1"
+        },
+        {
+          "$ref": "#/pictures/2"
+        },
+        {
+          "$ref": "#/pictures/3"
+        },
+        {
+          "$ref": "#/texts/8"
+        }
+      ],
+      "content_layer": "body",
+      "name": "_root_",
+      "label": "unspecified"
+    },
+    "groups": [],
+    "texts": [
+      {
+        "self_ref": "#/texts/0",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [
+          {
+            "page_no": 1,
+            "bbox": {
+              "l": 108.0,
+              "t": 333.6666666666667,
+              "r": 614.0,
+              "b": 307.0,
+              "coord_origin": "BOTTOMLEFT"
+            },
+            "charspan": [
+              0,
+              43
+            ]
+          }
+        ],
+        "orig": "A4 Size Four Page Food Menu Vector Template",
+        "text": "A4 Size Four Page Food Menu Vector Template",
+        "level": 1
+      },
+      {
+        "self_ref": "#/texts/1",
+        "parent": {
+          "$ref": "#/pictures/0"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [
+          {
+            "page_no": 1,
+            "bbox": {
+              "l": 36.666666666666664,
+              "t": 262.6666666666667,
+              "r": 103.66666666666667,
+              "b": 220.33333333333334,
+              "coord_origin": "BOTTOMLEFT"
+            },
+            "charspan": [
+              0,
+              2
+            ]
+          }
+        ],
+        "orig": "ME",
+        "text": "ME"
+      },
+      {
+        "self_ref": "#/texts/2",
+        "parent": {
+          "$ref": "#/pictures/0"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [
+          {
+            "page_no": 1,
+            "bbox": {
+              "l": 36.666666666666664,
+              "t": 224.66666666666666,
+              "r": 103.0,
+              "b": 182.33333333333334,
+              "coord_origin": "BOTTOMLEFT"
+            },
+            "charspan": [
+              0,
+              2
+            ]
+          }
+        ],
+        "orig": "NU",
+        "text": "NU"
+      },
+      {
+        "self_ref": "#/texts/3",
+        "parent": {
+          "$ref": "#/pictures/1"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [
+          {
+            "page_no": 1,
+            "bbox": {
+              "l": 207.0,
+              "t": 217.33333333333334,
+              "r": 271.6666666666667,
+              "b": 182.0,
+              "coord_origin": "BOTTOMLEFT"
+            },
+            "charspan": [
+              0,
+              9
+            ]
+          }
+        ],
+        "orig": "MAIN DISH",
+        "text": "MAIN DISH",
+        "level": 1
+      },
+      {
+        "self_ref": "#/texts/4",
+        "parent": {
+          "$ref": "#/pictures/2"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [
+          {
+            "page_no": 1,
+            "bbox": {
+              "l": 451.3333333333333,
+              "t": 218.0,
+              "r": 509.3333333333333,
+              "b": 182.0,
+              "coord_origin": "BOTTOMLEFT"
+            },
+            "charspan": [
+              0,
+              8
+            ]
+          }
+        ],
+        "orig": "NEW DISH",
+        "text": "NEW DISH",
+        "level": 1
+      },
+      {
+        "self_ref": "#/texts/5",
+        "parent": {
+          "$ref": "#/pictures/3"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [
+          {
+            "page_no": 1,
+            "bbox": {
+              "l": 565.3333333333334,
+              "t": 268.0,
+              "r": 594.0,
+              "b": 257.3333333333333,
+              "coord_origin": "BOTTOMLEFT"
+            },
+            "charspan": [
+              0,
+              5
+            ]
+          }
+        ],
+        "orig": "SINCE",
+        "text": "SINCE"
+      },
+      {
+        "self_ref": "#/texts/6",
+        "parent": {
+          "$ref": "#/pictures/3"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "text",
+        "prov": [
+          {
+            "page_no": 1,
+            "bbox": {
+              "l": 562.6666666666666,
+              "t": 260.0,
+              "r": 596.6666666666666,
+              "b": 214.66666666666666,
+              "coord_origin": "BOTTOMLEFT"
+            },
+            "charspan": [
+              0,
+              2
+            ]
+          }
+        ],
+        "orig": "28",
+        "text": "28"
+      },
+      {
+        "self_ref": "#/texts/7",
+        "parent": {
+          "$ref": "#/pictures/3"
+        },
+        "children": [],
+        "content_layer": "body",
+        "label": "section_header",
+        "prov": [
+          {
+            "page_no": 1,
+            "bbox": {
+              "l": 556.6666666666666,
+              "t": 168.0,
+              "r": 618.0,
+              "b": 132.66666666666666,
+              "coord_origin": "BOTTOMLEFT"
+            },
+            "charspan": [
+              0,
+              8
+            ]
+          }
+        ],
+        "orig": "SEA FOOD",
+        "text": "SEA FOOD",
+        "level": 1
+      },
+      {
+        "self_ref": "#/texts/8",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [],
+        "content_layer": "furniture",
+        "label": "page_footer",
+        "prov": [
+          {
+            "page_no": 1,
+            "bbox": {
+              "l": 64.33333333333333,
+              "t": 29.0,
+              "r": 135.0,
+              "b": 16.0,
+              "coord_origin": "BOTTOMLEFT"
+            },
+            "charspan": [
+              0,
+              10
+            ]
+          }
+        ],
+        "orig": "Front page",
+        "text": "Front page"
+      }
+    ],
+    "pictures": [
+      {
+        "self_ref": "#/pictures/0",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/1"
+          },
+          {
+            "$ref": "#/texts/2"
+          }
+        ],
+        "content_layer": "body",
+        "label": "picture",
+        "prov": [
+          {
+            "page_no": 1,
+            "bbox": {
+              "l": 14.515922546386719,
+              "t": 283.7771530151367,
+              "r": 186.75918579101562,
+              "b": 45.476287841796875,
+              "coord_origin": "BOTTOMLEFT"
+            },
+            "charspan": [
+              0,
+              0
+            ]
+          }
+        ],
+        "captions": [],
+        "references": [],
+        "footnotes": [],
+        "annotations": []
+      },
+      {
+        "self_ref": "#/pictures/1",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/3"
+          }
+        ],
+        "content_layer": "body",
+        "label": "picture",
+        "prov": [
+          {
+            "page_no": 1,
+            "bbox": {
+              "l": 189.11842346191406,
+              "t": 283.8823928833008,
+              "r": 357.4530944824219,
+              "b": 45.05426025390625,
+              "coord_origin": "BOTTOMLEFT"
+            },
+            "charspan": [
+              0,
+              0
+            ]
+          }
+        ],
+        "captions": [],
+        "references": [],
+        "footnotes": [],
+        "annotations": []
+      },
+      {
+        "self_ref": "#/pictures/2",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/4"
+          }
+        ],
+        "content_layer": "body",
+        "label": "picture",
+        "prov": [
+          {
+            "page_no": 1,
+            "bbox": {
+              "l": 362.44268798828125,
+              "t": 283.6518249511719,
+              "r": 530.5698852539062,
+              "b": 44.99383544921875,
+              "coord_origin": "BOTTOMLEFT"
+            },
+            "charspan": [
+              0,
+              0
+            ]
+          }
+        ],
+        "captions": [],
+        "references": [],
+        "footnotes": [],
+        "annotations": []
+      },
+      {
+        "self_ref": "#/pictures/3",
+        "parent": {
+          "$ref": "#/body"
+        },
+        "children": [
+          {
+            "$ref": "#/texts/5"
+          },
+          {
+            "$ref": "#/texts/6"
+          },
+          {
+            "$ref": "#/texts/7"
+          }
+        ],
+        "content_layer": "body",
+        "label": "picture",
+        "prov": [
+          {
+            "page_no": 1,
+            "bbox": {
+              "l": 534.8348999023438,
+              "t": 284.0821304321289,
+              "r": 704.1627197265625,
+              "b": 45.11920166015625,
+              "coord_origin": "BOTTOMLEFT"
+            },
+            "charspan": [
+              0,
+              0
+            ]
+          }
+        ],
+        "captions": [],
+        "references": [],
+        "footnotes": [],
+        "annotations": []
+      }
+    ],
+    "tables": [],
+    "key_value_items": [],
+    "form_items": [],
+    "pages": {
+      "1": {
+        "size": {
+          "width": 720.0,
+          "height": 360.0
+        },
+        "page_no": 1
+      }
+    }
+  }
+}
