@@ -708,9 +708,9 @@ def rag_query(body: RAGQueryRequest):
     context = "\n\n---\n\n".join(context_parts)
 
     response = ai.chat.completions.create(
-        model="gpt-5-mini",
+        model="gpt-4o-mini",
         max_completion_tokens=3000,
-        temperature=0,
+        temperature=1,
         messages=[
             {
                 "role": "system",
