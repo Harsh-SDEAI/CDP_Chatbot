@@ -454,10 +454,11 @@ async def scrape_url(body: ScrapeRequest):
     new_hash = result["content_hash"]
     markdown = result["markdown"]
 
-    # Check if already exists
+    # Check if already exists and the .md file is still on disk
     existing_meta = load_meta(file_id)
-    if existing_meta and existing_meta.get("content_hash") == new_hash:
-        # Content unchanged
+    md_path = STORAGE_DIR / f"{file_id}.md"
+    if existing_meta and existing_meta.get("content_hash") == new_hash and md_path.exists():
+        # Content unchanged and file still present
         save_meta(file_id, {**existing_meta, "last_checked_at": datetime.utcnow().isoformat() + "Z"})
         return {
             "file_id": file_id,
