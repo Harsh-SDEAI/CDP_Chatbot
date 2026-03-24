@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Concierge API - Flow</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #f8f9fb;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #1a1a2e;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #1a1a2e;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 0.95rem;
+            margin-bottom: 36px;
+        }
+
+        /* Section heading */
+        .section-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-top: 48px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title:first-of-type {
+            margin-top: 0;
+        }
+
+        /* Pipeline */
+        .pipeline {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            max-width: 420px;
+            width: 100%;
+        }
+
+        .step-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            width: 100%;
+            padding: 18px 20px;
+            background: #fff;
+            border: 1px solid #e8eaef;
+            border-radius: 14px;
+            transition: box-shadow 0.2s;
+        }
+        .step-row:hover {
+            box-shadow: 0 4px 18px rgba(0,0,0,0.07);
+        }
+
+        .step-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .icon-start    { background: #ecfdf5; color: #10b981; }
+        .icon-load     { background: #eef2ff; color: #6366f1; }
+        .icon-sched    { background: #fef9c3; color: #ca8a04; }
+        .icon-ready    { background: #e0f2fe; color: #0ea5e9; }
+        .icon-fetch    { background: #eef2ff; color: #6366f1; }
+        .icon-html     { background: #fff1f2; color: #f43f5e; }
+        .icon-md       { background: #f0e6ff; color: #8b5cf6; }
+        .icon-hash     { background: #fef9c3; color: #ca8a04; }
+        .icon-save     { background: #ecfdf5; color: #10b981; }
+        .icon-chunk    { background: #fff1f2; color: #f43f5e; }
+        .icon-embed    { background: #e0f2fe; color: #0ea5e9; }
+        .icon-index    { background: #fef9c3; color: #ca8a04; }
+        .icon-monitor  { background: #f0e6ff; color: #8b5cf6; }
+        .icon-check    { background: #eef2ff; color: #6366f1; }
+        .icon-compare  { background: #fff1f2; color: #f43f5e; }
+        .icon-update   { background: #ecfdf5; color: #10b981; }
+        .icon-question { background: #e0f2fe; color: #0ea5e9; }
+        .icon-search   { background: #fef9c3; color: #ca8a04; }
+        .icon-context  { background: #f0e6ff; color: #8b5cf6; }
+        .icon-gpt      { background: #eef2ff; color: #6366f1; }
+        .icon-answer   { background: #ecfdf5; color: #10b981; }
+        .icon-api      { background: #ede9fe; color: #7c3aed; }
+
+        .step-text { display: flex; flex-direction: column; }
+        .step-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+        .step-desc {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        /* Connector line */
+        .connector {
+            width: 2px;
+            height: 22px;
+            background: linear-gradient(180deg, #c7d2fe, #a78bfa);
+            border-radius: 2px;
+        }
+        .connector-green {
+            width: 2px;
+            height: 22px;
+            background: linear-gradient(180deg, #bbf7d0, #22c55e);
+            border-radius: 2px;
+        }
+        .connector-amber {
+            width: 2px;
+            height: 22px;
+            background: linear-gradient(180deg, #fef08a, #eab308);
+            border-radius: 2px;
+        }
+        .connector-blue {
+            width: 2px;
+            height: 22px;
+            background: linear-gradient(180deg, #bae6fd, #0ea5e9);
+            border-radius: 2px;
+        }
+
+        /* Badge */
+        .badge {
+            margin-top: 32px;
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            color: #fff;
+            padding: 12px 32px;
+            border-radius: 30px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 18px rgba(14,165,233,0.3);
+        }
+        .badge span { margin: 0 6px; opacity: 0.6; }
+
+        /* Endpoints grid */
+        .endpoints {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            max-width: 420px;
+            width: 100%;
+        }
+        .endpoint-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            background: #fff;
+            border: 1px solid #e8eaef;
+            border-radius: 12px;
+            transition: box-shadow 0.2s;
+        }
+        .endpoint-card:hover {
+            box-shadow: 0 4px 18px rgba(0,0,0,0.07);
+        }
+        .ep-method {
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 3px 6px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .ep-post   { background: #ecfdf5; color: #10b981; }
+        .ep-get    { background: #eef2ff; color: #6366f1; }
+        .ep-delete { background: #fff1f2; color: #f43f5e; }
+        .ep-put    { background: #fef9c3; color: #ca8a04; }
+        .ep-text {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Concierge API</h1>
+    <p class="subtitle">concierge_api.py &mdash; FastAPI Backend &bull; Port 8001</p>
+
+    <!-- ── 1. STARTUP FLOW ── -->
+    <div class="section-title">&#128640; Startup Flow</div>
+
+    <div class="pipeline">
+
+        <div class="step-row">
+            <div class="step-icon icon-start">&#128640;</div>
+            <div class="step-text">
+                <div class="step-title">App Starts on Port 8001</div>
+                <div class="step-desc">FastAPI with CORS enabled</div>
+            </div>
+        </div>
+
+        <div class="connector-green"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-load">&#128451;</div>
+            <div class="step-text">
+                <div class="step-title">Load FAISS Vector Index</div>
+                <div class="step-desc">From disk (concierge_storage/faiss)</div>
+            </div>
+        </div>
+
+        <div class="connector-green"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-sched">&#9200;</div>
+            <div class="step-text">
+                <div class="step-title">Start Scheduler</div>
+                <div class="step-desc">Checks monitored URLs every 1 hour</div>
+            </div>
+        </div>
+
+        <div class="connector-green"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-ready">&#9989;</div>
+            <div class="step-text">
+                <div class="step-title">API Ready</div>
+                <div class="step-desc">Waiting for requests</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── 2. SCRAPE FLOW ── -->
+    <div class="section-title">&#127760; Scrape Flow (POST /scrape)</div>
+
+    <div class="pipeline">
+
+        <div class="step-row">
+            <div class="step-icon icon-fetch">&#127760;</div>
+            <div class="step-text">
+                <div class="step-title">Fetch Webpage</div>
+                <div class="step-desc">HTTP GET via httpx</div>
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-html">&#128296;</div>
+            <div class="step-text">
+                <div class="step-title">Clean HTML</div>
+                <div class="step-desc">Remove scripts, nav, footer, headers</div>
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-md">&#128221;</div>
+            <div class="step-text">
+                <div class="step-title">Convert to Markdown</div>
+                <div class="step-desc">Structured text extraction</div>
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-hash">&#128274;</div>
+            <div class="step-text">
+                <div class="step-title">SHA-256 Hash</div>
+                <div class="step-desc">Detect content changes</div>
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-save">&#128190;</div>
+            <div class="step-text">
+                <div class="step-title">Save .md + .meta.json</div>
+                <div class="step-desc">Store content &amp; metadata to disk</div>
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-chunk">&#9988;</div>
+            <div class="step-text">
+                <div class="step-title">Chunking</div>
+                <div class="step-desc">1500 words / 200 overlap</div>
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-embed">&#9889;</div>
+            <div class="step-text">
+                <div class="step-title">Generate Embeddings</div>
+                <div class="step-desc">OpenAI text-embedding-3-small</div>
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-index">&#128451;</div>
+            <div class="step-text">
+                <div class="step-title">Store in FAISS Index</div>
+                <div class="step-desc">Vector indexing for similarity search</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── 3. MONITOR FLOW ── -->
+    <div class="section-title">&#128225; Monitor Flow (POST /monitor)</div>
+
+    <div class="pipeline">
+
+        <div class="step-row">
+            <div class="step-icon icon-monitor">&#128225;</div>
+            <div class="step-text">
+                <div class="step-title">Add URL to Monitor</div>
+                <div class="step-desc">With custom interval (default 24h)</div>
+            </div>
+        </div>
+
+        <div class="connector-amber"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-check">&#128270;</div>
+            <div class="step-text">
+                <div class="step-title">Check if Already Monitored</div>
+                <div class="step-desc">Returns 409 if duplicate</div>
+            </div>
+        </div>
+
+        <div class="connector-amber"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-fetch">&#127760;</div>
+            <div class="step-text">
+                <div class="step-title">Scrape Immediately</div>
+                <div class="step-desc">Same as Scrape Flow above</div>
+            </div>
+        </div>
+
+        <div class="connector-amber"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-save">&#128190;</div>
+            <div class="step-text">
+                <div class="step-title">Save to monitored_urls.json</div>
+                <div class="step-desc">Persists URL + interval + hash</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── 4. AUTO-CHECK SCHEDULER ── -->
+    <div class="section-title">&#9200; Auto-Check Scheduler (Every 1 Hour)</div>
+
+    <div class="pipeline">
+
+        <div class="step-row">
+            <div class="step-icon icon-sched">&#9200;</div>
+            <div class="step-text">
+                <div class="step-title">Scheduler Tick</div>
+                <div class="step-desc">Runs every 1 hour automatically</div>
+            </div>
+        </div>
+
+        <div class="connector-amber"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-monitor">&#128203;</div>
+            <div class="step-text">
+                <div class="step-title">Load Monitored URLs</div>
+                <div class="step-desc">From monitored_urls.json</div>
+            </div>
+        </div>
+
+        <div class="connector-amber"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-check">&#128336;</div>
+            <div class="step-text">
+                <div class="step-title">Check Interval Elapsed</div>
+                <div class="step-desc">Skip if not time yet</div>
+            </div>
+        </div>
+
+        <div class="connector-amber"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-fetch">&#127760;</div>
+            <div class="step-text">
+                <div class="step-title">Re-scrape &amp; Compare Hash</div>
+                <div class="step-desc">SHA-256 comparison with last hash</div>
+            </div>
+        </div>
+
+        <div class="connector-amber"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-update">&#128260;</div>
+            <div class="step-text">
+                <div class="step-title">Update if Changed</div>
+                <div class="step-desc">Re-save .md + Re-index in FAISS</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── 5. RAG QUERY FLOW ── -->
+    <div class="section-title">&#128172; RAG Query Flow (POST /rag/query)</div>
+
+    <div class="pipeline">
+
+        <div class="step-row">
+            <div class="step-icon icon-question">&#10067;</div>
+            <div class="step-text">
+                <div class="step-title">User Sends Question</div>
+                <div class="step-desc">e.g. "What about dining?"</div>
+            </div>
+        </div>
+
+        <div class="connector-blue"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-embed">&#9889;</div>
+            <div class="step-text">
+                <div class="step-title">Question to Embedding</div>
+                <div class="step-desc">Convert query to vector</div>
+            </div>
+        </div>
+
+        <div class="connector-blue"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-search">&#128270;</div>
+            <div class="step-text">
+                <div class="step-title">Search FAISS Index</div>
+                <div class="step-desc">Top 10 similar chunks</div>
+            </div>
+        </div>
+
+        <div class="connector-blue"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-context">&#128221;</div>
+            <div class="step-text">
+                <div class="step-title">Build Context</div>
+                <div class="step-desc">Combine matched chunks</div>
+            </div>
+        </div>
+
+        <div class="connector-blue"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-gpt">&#129302;</div>
+            <div class="step-text">
+                <div class="step-title">Send to GPT</div>
+                <div class="step-desc">System prompt + context + question</div>
+            </div>
+        </div>
+
+        <div class="connector-blue"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-answer">&#128172;</div>
+            <div class="step-text">
+                <div class="step-title">Return Answer + Sources</div>
+                <div class="step-desc">GPT-5-mini response to user</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── 6. ALL ENDPOINTS ── -->
+    <div class="section-title">&#128205; API Endpoints</div>
+
+    <div class="endpoints">
+        <div class="endpoint-card">
+            <span class="ep-method ep-post">POST</span>
+            <span class="ep-text">/scrape</span>
+        </div>
+        <div class="endpoint-card">
+            <span class="ep-method ep-post">POST</span>
+            <span class="ep-text">/monitor</span>
+        </div>
+        <div class="endpoint-card">
+            <span class="ep-method ep-get">GET</span>
+            <span class="ep-text">/monitor</span>
+        </div>
+        <div class="endpoint-card">
+            <span class="ep-method ep-delete">DEL</span>
+            <span class="ep-text">/monitor/:id</span>
+        </div>
+        <div class="endpoint-card">
+            <span class="ep-method ep-put">PUT</span>
+            <span class="ep-text">/monitor/:id</span>
+        </div>
+        <div class="endpoint-card">
+            <span class="ep-method ep-post">POST</span>
+            <span class="ep-text">/monitor/check-now</span>
+        </div>
+        <div class="endpoint-card">
+            <span class="ep-method ep-post">POST</span>
+            <span class="ep-text">/rag/query</span>
+        </div>
+        <div class="endpoint-card">
+            <span class="ep-method ep-get">GET</span>
+            <span class="ep-text">/rag/index/stats</span>
+        </div>
+        <div class="endpoint-card">
+            <span class="ep-method ep-get">GET</span>
+            <span class="ep-text">/files</span>
+        </div>
+        <div class="endpoint-card">
+            <span class="ep-method ep-get">GET</span>
+            <span class="ep-text">/content/:id</span>
+        </div>
+        <div class="endpoint-card">
+            <span class="ep-method ep-delete">DEL</span>
+            <span class="ep-text">/content/:id</span>
+        </div>
+        <div class="endpoint-card">
+            <span class="ep-method ep-get">GET</span>
+            <span class="ep-text">/debug/search</span>
+        </div>
+    </div>
+
+    <div class="badge">&#9889; Auto-Monitor <span>|</span> RAG-Powered <span>|</span> Real-time</div>
+
+</body>
+</html>
