@@ -25,13 +25,16 @@
         .header h1 { font-size: 1.4rem; font-weight: 700; }
         .header .sub { color: #888; font-size: 0.8rem; margin-top: 2px; }
 
-        /* 3-column grid */
+        /* 2-column grid */
         .grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
             flex: 1;
             min-height: 0;
+            max-width: 720px;
+            width: 100%;
+            margin: 0 auto;
         }
 
         /* Column */
@@ -222,63 +225,7 @@
             </div>
         </div>
 
-        <!-- ── COLUMN 2: Indexing Pipeline ── -->
-        <div class="col">
-            <div class="col-title purple">Indexing Pipeline</div>
-
-            <div class="step">
-                <div class="step-icon ir">&#9988;</div>
-                <div class="step-text">
-                    <div class="step-title">Chunk Text</div>
-                    <div class="step-desc">1500 words / 200 overlap</div>
-                </div>
-            </div>
-            <div class="conn cp"></div>
-            <div class="step">
-                <div class="step-icon ib">&#9889;</div>
-                <div class="step-text">
-                    <div class="step-title">Generate Embeddings</div>
-                    <div class="step-desc">text-embedding-3-small</div>
-                </div>
-            </div>
-            <div class="conn cp"></div>
-            <div class="step">
-                <div class="step-icon iy">&#128451;</div>
-                <div class="step-text">
-                    <div class="step-title">Store in FAISS</div>
-                    <div class="step-desc">L2 similarity index</div>
-                </div>
-            </div>
-            <div class="conn cp"></div>
-            <div class="step">
-                <div class="step-icon ig">&#128190;</div>
-                <div class="step-text">
-                    <div class="step-title">Save Index to Disk</div>
-                    <div class="step-desc">index.faiss + meta.json</div>
-                </div>
-            </div>
-            <div class="conn cp"></div>
-
-            <div style="height:16px"></div>
-
-            <div class="step" style="border: 1.5px dashed #a78bfa;">
-                <div class="step-icon ip">&#128640;</div>
-                <div class="step-text">
-                    <div class="step-title">Startup</div>
-                    <div class="step-desc">Load FAISS + Start Scheduler</div>
-                </div>
-            </div>
-            <div class="conn cp"></div>
-            <div class="step" style="border: 1.5px dashed #a78bfa;">
-                <div class="step-icon ig">&#9989;</div>
-                <div class="step-text">
-                    <div class="step-title">API Ready on :8001</div>
-                    <div class="step-desc">CORS enabled, waiting</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── COLUMN 3: RAG Query ── -->
+        <!-- ── COLUMN 2: RAG Query ── -->
         <div class="col">
             <div class="col-title blue">RAG Query</div>
 
