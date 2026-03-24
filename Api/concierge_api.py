@@ -99,33 +99,52 @@ def html_to_markdown(html: str) -> str:
 
     body = soup.body or soup
 
-    # ── Primary approach: walk block-level elements in document order ──
+    # ── Single-pass walk: all elements in document order ──
     BLOCK_TAGS = {
         "h1", "h2", "h3", "h4", "h5", "h6",
         "p", "li", "pre", "blockquote", "dt", "dd",
         "td", "th", "figcaption", "label", "summary",
         "button",
     }
+    # Non-block tags to also capture when they are leaf elements (no block children)
+    LEAF_TAGS = {"div", "span", "a"}
 
     lines = []
     prev_text = None
-    captured_texts = set()
+
+    def _has_block_child(elem):
+        """Return True if elem has any direct child that is a block-level or div tag."""
+        for c in elem.children:
+            if c.name and (c.name in BLOCK_TAGS or c.name in ("div",)):
+                return True
+        return False
 
     for elem in body.descendants:
-        if elem.name is None or elem.name not in BLOCK_TAGS:
+        if elem.name is None:
+            continue
+
+        tag = elem.name
+
+        # Determine if this element should produce a line
+        is_block = tag in BLOCK_TAGS
+        is_leaf = tag in LEAF_TAGS and not _has_block_child(elem)
+
+        if not is_block and not is_leaf:
             continue
 
         text = elem.get_text(separator=" ", strip=True)
         if not text or len(text) < 3:
             continue
-        # Only skip consecutive duplicates, not repeated content across sections
+        # For leaf non-block elements, require slightly longer text
+        if is_leaf and not is_block and len(text) < 5:
+            continue
+        # Skip consecutive duplicates
         if text == prev_text:
             continue
 
         prev_text = text
-        captured_texts.add(text)
 
-        tag = elem.name
+        # Format based on tag type
         if tag == "h1":               lines.append(f"# {text}")
         elif tag == "h2":             lines.append(f"## {text}")
         elif tag == "h3":             lines.append(f"### {text}")
@@ -137,22 +156,6 @@ def html_to_markdown(html: str) -> str:
         elif tag in ("summary", "button"):
             lines.append(f"**Q. {text}**")
         else:                         lines.append(text)
-        lines.append("")
-
-    # ── Catch text in leaf <div>/<span> elements missed by BLOCK_TAGS ──
-    # This captures FAQ questions and other content in non-standard elements
-    # (e.g. accordion headers in <div> or <span> tags).
-    for elem in body.descendants:
-        if elem.name not in ("div", "span", "a"):
-            continue
-        # Skip if this element has block-level children (it's a wrapper)
-        if any(c.name in BLOCK_TAGS or c.name in ("div",) for c in elem.children if c.name):
-            continue
-        text = elem.get_text(separator=" ", strip=True)
-        if not text or len(text) < 5 or text in captured_texts:
-            continue
-        captured_texts.add(text)
-        lines.append(text)
         lines.append("")
 
     result = "\n".join(lines).strip()
