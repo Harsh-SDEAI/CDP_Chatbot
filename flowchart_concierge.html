@@ -11,7 +11,9 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            padding: 24px 32px 20px;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 48px;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #1a1a2e;
         }
@@ -19,22 +21,19 @@
         /* Header */
         .header {
             text-align: center;
-            margin-bottom: 18px;
+            margin-bottom: 28px;
             flex-shrink: 0;
         }
-        .header h1 { font-size: 1.4rem; font-weight: 700; }
-        .header .sub { color: #888; font-size: 0.8rem; margin-top: 2px; }
+        .header h1 { font-size: 2rem; font-weight: 700; }
+        .header .sub { color: #888; font-size: 1rem; margin-top: 4px; }
 
         /* 2-column grid */
         .grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 28px;
-            flex: 1;
-            min-height: 0;
-            max-width: 720px;
+            gap: 40px;
+            max-width: 900px;
             width: 100%;
-            margin: 0 auto;
         }
 
         /* Column */
@@ -45,41 +44,40 @@
             align-items: center;
         }
         .col-title {
-            font-size: 0.82rem;
+            font-size: 1.05rem;
             font-weight: 700;
             color: #fff;
-            padding: 6px 16px;
-            border-radius: 20px;
-            margin-bottom: 12px;
+            padding: 8px 24px;
+            border-radius: 24px;
+            margin-bottom: 16px;
             flex-shrink: 0;
             letter-spacing: 0.3px;
         }
-        .col-title.green  { background: linear-gradient(135deg, #10b981, #059669); }
-        .col-title.purple { background: linear-gradient(135deg, #8b5cf6, #6366f1); }
-        .col-title.blue   { background: linear-gradient(135deg, #0ea5e9, #3b82f6); }
+        .col-title.green { background: linear-gradient(135deg, #10b981, #059669); }
+        .col-title.blue  { background: linear-gradient(135deg, #0ea5e9, #3b82f6); }
 
         /* Step card */
         .step {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 14px;
             width: 100%;
-            padding: 10px 14px;
+            padding: 16px 20px;
             background: #fff;
             border: 1px solid #e8eaef;
-            border-radius: 10px;
+            border-radius: 14px;
             transition: box-shadow 0.2s;
         }
-        .step:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.07); }
+        .step:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
 
         .step-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1rem;
+            font-size: 1.3rem;
             flex-shrink: 0;
         }
 
@@ -91,76 +89,18 @@
         .ii { background: #eef2ff; color: #6366f1; }
 
         .step-text { display: flex; flex-direction: column; min-width: 0; }
-        .step-title { font-size: 0.78rem; font-weight: 700; color: #1a1a2e; }
-        .step-desc  { font-size: 0.68rem; color: #999; margin-top: 1px; }
+        .step-title { font-size: 1.05rem; font-weight: 700; color: #1a1a2e; }
+        .step-desc  { font-size: 0.85rem; color: #999; margin-top: 2px; }
 
         /* Connector */
         .conn {
             width: 2px;
-            height: 10px;
+            height: 14px;
             border-radius: 2px;
             flex-shrink: 0;
         }
         .cg { background: linear-gradient(180deg, #bbf7d0, #22c55e); }
-        .cp { background: linear-gradient(180deg, #c7d2fe, #a78bfa); }
         .cb { background: linear-gradient(180deg, #bae6fd, #0ea5e9); }
-
-        /* Arrow between columns */
-        .arrow {
-            width: 2px;
-            height: 10px;
-            flex-shrink: 0;
-        }
-
-        /* Bottom bar */
-        .bottom {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 24px;
-            margin-top: 14px;
-            flex-shrink: 0;
-        }
-        .badge {
-            background: linear-gradient(135deg, #0ea5e9, #6366f1);
-            color: #fff;
-            padding: 8px 22px;
-            border-radius: 20px;
-            font-size: 0.78rem;
-            font-weight: 700;
-            letter-spacing: 0.3px;
-            box-shadow: 0 3px 12px rgba(14,165,233,0.25);
-        }
-        .badge span { margin: 0 5px; opacity: 0.5; }
-
-        /* Endpoint pills */
-        .ep-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            justify-content: center;
-        }
-        .ep {
-            font-size: 0.6rem;
-            font-weight: 700;
-            padding: 3px 8px;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            background: #fff;
-            border: 1px solid #e8eaef;
-        }
-        .ep .m {
-            font-size: 0.5rem;
-            font-weight: 800;
-            padding: 1px 3px;
-            border-radius: 2px;
-        }
-        .m-post { background: #ecfdf5; color: #10b981; }
-        .m-get  { background: #eef2ff; color: #6366f1; }
-        .m-del  { background: #fff1f2; color: #f43f5e; }
-        .m-put  { background: #fef9c3; color: #ca8a04; }
     </style>
 </head>
 <body>
@@ -278,26 +218,6 @@
             </div>
         </div>
 
-    </div>
-
-    <!-- Bottom: endpoints + badge -->
-    <div class="bottom">
-        <div class="ep-row">
-            <div class="ep"><span class="m m-post">POST</span>/scrape</div>
-            <div class="ep"><span class="m m-post">POST</span>/monitor</div>
-            <div class="ep"><span class="m m-get">GET</span>/monitor</div>
-            <div class="ep"><span class="m m-del">DEL</span>/monitor/:id</div>
-            <div class="ep"><span class="m m-put">PUT</span>/monitor/:id</div>
-            <div class="ep"><span class="m m-post">POST</span>/check-now</div>
-            <div class="ep"><span class="m m-post">POST</span>/rag/query</div>
-            <div class="ep"><span class="m m-get">GET</span>/index/stats</div>
-            <div class="ep"><span class="m m-get">GET</span>/files</div>
-            <div class="ep"><span class="m m-get">GET</span>/content/:id</div>
-            <div class="ep"><span class="m m-del">DEL</span>/content/:id</div>
-        </div>
-    </div>
-    <div style="text-align:center;margin-top:10px;">
-        <div class="badge">&#9889; Auto-Monitor <span>|</span> RAG-Powered <span>|</span> Real-time</div>
     </div>
 
 </body>
