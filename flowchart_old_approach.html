@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Old Approach - System Flow</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #f8f9fb;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #1a1a2e;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #1a1a2e;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 0.95rem;
+            margin-bottom: 36px;
+        }
+
+        /* Pipeline */
+        .pipeline {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            max-width: 420px;
+            width: 100%;
+        }
+
+        .step-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            width: 100%;
+            padding: 18px 20px;
+            background: #fff;
+            border: 1px solid #e8eaef;
+            border-radius: 14px;
+            transition: box-shadow 0.2s;
+        }
+        .step-row:hover {
+            box-shadow: 0 4px 18px rgba(0,0,0,0.07);
+        }
+
+        .step-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .icon-user   { background: #e0f2fe; color: #0ea5e9; }
+        .icon-bot    { background: #fef9c3; color: #ca8a04; }
+        .icon-review { background: #fff1f2; color: #f43f5e; }
+        .icon-status { background: #eef2ff; color: #6366f1; }
+        .icon-save   { background: #ecfdf5; color: #10b981; }
+
+        .step-text { display: flex; flex-direction: column; }
+        .step-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+        .step-desc {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        /* Connector line */
+        .connector {
+            width: 2px;
+            height: 22px;
+            background: linear-gradient(180deg, #fecaca, #f87171);
+            border-radius: 2px;
+        }
+
+        /* Badge */
+        .badge {
+            margin-top: 32px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #fff;
+            padding: 12px 32px;
+            border-radius: 30px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 18px rgba(239,68,68,0.3);
+        }
+        .badge span { margin: 0 6px; opacity: 0.6; }
+    </style>
+</head>
+<body>
+
+    <h1>Old Approach</h1>
+    <p class="subtitle">Manual QA Review Pipeline</p>
+
+    <div class="pipeline">
+
+        <div class="step-row">
+            <div class="step-icon icon-user">&#128100;</div>
+            <div class="step-text">
+                <div class="step-title">User Asks Question</div>
+                <div class="step-desc">Initiates the conversation</div>
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-bot">&#129302;</div>
+            <div class="step-text">
+                <div class="step-title">Chatbot Responds</div>
+                <div class="step-desc">Based on existing QA pairs</div>
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-review">&#128065;</div>
+            <div class="step-text">
+                <div class="step-title">Admin Manual Review</div>
+                <div class="step-desc">Checks Config Admin Panel</div>
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-status">&#128203;</div>
+            <div class="step-text">
+                <div class="step-title">Assign Status</div>
+                <div class="step-desc">Correct / Incorrect / Junk</div>
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-save">&#128190;</div>
+            <div class="step-text">
+                <div class="step-title">Save to Database</div>
+                <div class="step-desc">Updates single record</div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="badge">&#9888; Reactive <span>|</span> Slow <span>|</span> One-at-a-time</div>
+
+</body>
+</html>
