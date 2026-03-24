@@ -6,281 +6,185 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: linear-gradient(135deg, #0a0a1a, #1a1a3e, #0f2027);
+            background: #f8f9fb;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 40px 20px;
+            padding: 50px 20px;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #fff;
+            color: #1a1a2e;
         }
+
         h1 {
-            font-size: 2rem;
+            font-size: 1.8rem;
+            font-weight: 700;
             margin-bottom: 6px;
-            background: linear-gradient(90deg, #f97316, #facc15);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #1a1a2e;
         }
-        .subtitle { color: #aaa; margin-bottom: 10px; font-size: 1rem; }
-        .port-badge {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 20px;
-            padding: 5px 16px;
-            font-size: 0.85rem;
-            color: #facc15;
-            margin-bottom: 28px;
-        }
-
-        .arrow { font-size: 1.8rem; color: #555; margin: 6px 0; }
-        .arrow-sm { font-size: 1.2rem; color: #555; }
-
-        /* Startup */
-        .startup {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .startup-box {
-            background: linear-gradient(135deg, #1e3a5f, #2563EB);
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-weight: 600;
+        .subtitle {
+            color: #888;
             font-size: 0.95rem;
-            box-shadow: 0 4px 16px rgba(37,99,235,0.3);
+            margin-bottom: 36px;
         }
 
-        /* Paths */
-        .paths {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-            max-width: 1000px;
-            width: 100%;
-        }
-        .card {
-            flex: 1;
-            min-width: 240px;
-            max-width: 300px;
-            border-radius: 18px;
-            padding: 20px 16px;
+        /* Pipeline */
+        .pipeline {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
-            box-shadow: 0 6px 24px rgba(0,0,0,0.4);
-        }
-        .c-upload { background: linear-gradient(135deg, #f97316, #ea580c); }
-        .c-scrape { background: linear-gradient(135deg, #10b981, #059669); }
-        .c-rag    { background: linear-gradient(135deg, #8B5CF6, #7C3AED); }
-
-        .card-icon { font-size: 2rem; }
-        .card-title { font-size: 1.1rem; font-weight: 700; }
-        .card-endpoint {
-            background: rgba(0,0,0,0.3);
-            padding: 3px 10px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-family: monospace;
-        }
-        .step {
-            background: rgba(255,255,255,0.15);
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 0.82rem;
-            width: 100%;
-            text-align: center;
-        }
-        .step-arrow { color: rgba(255,255,255,0.4); font-size: 1rem; }
-        .badge {
-            padding: 6px 16px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-        .badge-green { background: #22c55e; }
-        .badge-gray  { background: #6b7280; }
-        .badge-row { display: flex; gap: 6px; }
-
-        /* FAISS */
-        .faiss {
-            margin-top: 28px;
-            text-align: center;
-            max-width: 1000px;
+            gap: 0;
+            max-width: 420px;
             width: 100%;
         }
-        .faiss-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #facc15;
-            margin-bottom: 12px;
+
+        .step-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            width: 100%;
+            padding: 18px 20px;
+            background: #fff;
+            border: 1px solid #e8eaef;
+            border-radius: 14px;
+            transition: box-shadow 0.2s;
         }
-        .faiss-flow {
+        .step-row:hover {
+            box-shadow: 0 4px 18px rgba(0,0,0,0.07);
+        }
+
+        .step-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
+            font-size: 1.25rem;
+            flex-shrink: 0;
         }
-        .fb {
-            padding: 10px 18px;
-            border-radius: 12px;
-            font-size: 0.88rem;
-            font-weight: 600;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-        }
-        .fb-doc   { background: linear-gradient(135deg, #f97316, #ea580c); }
-        .fb-chunk { background: linear-gradient(135deg, #10b981, #059669); }
-        .fb-embed { background: linear-gradient(135deg, #8B5CF6, #7C3AED); }
-        .fb-index { background: linear-gradient(135deg, #facc15, #eab308); color: #000; }
-        .fb-disk  { background: linear-gradient(135deg, #6b7280, #4b5563); }
 
-        /* Storage */
-        .storage {
-            margin-top: 24px;
-            max-width: 700px;
-            width: 100%;
-            text-align: center;
+        .icon-upload  { background: #eef2ff; color: #6366f1; }
+        .icon-extract { background: #ecfdf5; color: #10b981; }
+        .icon-md      { background: #f0e6ff; color: #8b5cf6; }
+        .icon-chunk   { background: #fff1f2; color: #f43f5e; }
+        .icon-embed   { background: #e0f2fe; color: #0ea5e9; }
+        .icon-index   { background: #fef9c3; color: #ca8a04; }
+        .icon-rag     { background: #ede9fe; color: #7c3aed; }
+
+        .step-text { display: flex; flex-direction: column; }
+        .step-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #1a1a2e;
         }
-        .storage-title { font-size: 1rem; font-weight: 600; color: #94a3b8; margin-bottom: 10px; }
-        .storage-grid {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        .storage-item {
-            background: rgba(255,255,255,0.07);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 10px;
-            padding: 10px 14px;
+        .step-desc {
             font-size: 0.8rem;
-            min-width: 120px;
+            color: #888;
+            margin-top: 2px;
         }
-        .storage-item strong { display: block; font-size: 0.95rem; margin-bottom: 2px; }
 
-        /* Legend */
-        .legend {
-            margin-top: 24px;
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            justify-content: center;
+        /* Connector line */
+        .connector {
+            width: 2px;
+            height: 22px;
+            background: linear-gradient(180deg, #c7d2fe, #a78bfa);
+            border-radius: 2px;
         }
-        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #ccc; }
-        .dot { width: 11px; height: 11px; border-radius: 50%; }
+
+        /* Badge */
+        .badge {
+            margin-top: 32px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            padding: 12px 32px;
+            border-radius: 30px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 18px rgba(99,102,241,0.3);
+        }
+        .badge span { margin: 0 6px; opacity: 0.6; }
     </style>
 </head>
 <body>
 
     <h1>Admin Content Manager API</h1>
-    <p class="subtitle">main.py &mdash; FastAPI Backend</p>
-    <div class="port-badge">Port 8000 &bull; OpenAI + FAISS + Docling</div>
+    <p class="subtitle">main.py &mdash; FastAPI Backend &bull; Port 8000</p>
 
-    <!-- Startup -->
-    <div class="startup">
-        <div class="startup-box">App Starts</div>
-        <div class="arrow-sm">&#9654;</div>
-        <div class="startup-box">Load FAISS Index</div>
-        <div class="arrow-sm">&#9654;</div>
-        <div class="startup-box">API Ready</div>
-    </div>
+    <div class="pipeline">
 
-    <div class="arrow">&#9660;</div>
-
-    <!-- 3 Flows -->
-    <div class="paths">
-
-        <!-- Upload -->
-        <div class="card c-upload">
-            <div class="card-icon">&#128196;</div>
-            <div class="card-title">Upload File</div>
-            <div class="card-endpoint">POST /upload</div>
-            <div class="step">Receive file (PDF / IMG / DOCX / TXT)</div>
-            <div class="step-arrow">&#9660;</div>
-            <div class="step">Convert to Markdown via Docling</div>
-            <div class="step-arrow">&#9660;</div>
-            <div class="step">Save .md + metadata</div>
-            <div class="step-arrow">&#9660;</div>
-            <div class="step">Chunk &amp; embed into FAISS</div>
-            <div class="step-arrow">&#9660;</div>
-            <div class="badge badge-green">Indexed!</div>
+        <div class="step-row">
+            <div class="step-icon icon-upload">&#128196;</div>
+            <div class="step-text">
+                <div class="step-title">Upload Sources</div>
+                <div class="step-desc">PDF, Images, DOCX, TXT, URLs</div>
+            </div>
         </div>
 
-        <!-- Scrape -->
-        <div class="card c-scrape">
-            <div class="card-icon">&#127760;</div>
-            <div class="card-title">Scrape Website</div>
-            <div class="card-endpoint">POST /scrape</div>
-            <div class="step">Fetch URL &amp; strip boilerplate</div>
-            <div class="step-arrow">&#9660;</div>
-            <div class="step">Convert HTML &#8594; Markdown</div>
-            <div class="step-arrow">&#9660;</div>
-            <div class="step">Save .md + metadata</div>
-            <div class="step-arrow">&#9660;</div>
-            <div class="step">Chunk &amp; embed into FAISS</div>
-            <div class="step-arrow">&#9660;</div>
-            <div class="badge badge-green">Indexed!</div>
+        <div class="connector"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-extract">&#128270;</div>
+            <div class="step-text">
+                <div class="step-title">Extract Content</div>
+                <div class="step-desc">Docling OCR / Web Scrape</div>
+            </div>
         </div>
 
-        <!-- RAG Query -->
-        <div class="card c-rag">
-            <div class="card-icon">&#128172;</div>
-            <div class="card-title">RAG Query</div>
-            <div class="card-endpoint">POST /rag/query</div>
-            <div class="step">Receive user question</div>
-            <div class="step-arrow">&#9660;</div>
-            <div class="step">Embed &amp; search FAISS top-k</div>
-            <div class="step-arrow">&#9660;</div>
-            <div class="step">Send context + question to GPT-4o-mini</div>
-            <div class="step-arrow">&#9660;</div>
-            <div class="badge-row">
-                <div class="badge badge-green">Answer</div>
-                <div class="badge badge-gray">No docs</div>
+        <div class="connector"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-md">&#128221;</div>
+            <div class="step-text">
+                <div class="step-title">Convert to Markdown</div>
+                <div class="step-desc">Unified .md format</div>
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-chunk">&#9988;</div>
+            <div class="step-text">
+                <div class="step-title">Chunking</div>
+                <div class="step-desc">500w / 50 overlap</div>
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-embed">&#9889;</div>
+            <div class="step-text">
+                <div class="step-title">Generate Embeddings</div>
+                <div class="step-desc">OpenAI text-embedding-3-small</div>
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-index">&#128451;</div>
+            <div class="step-text">
+                <div class="step-title">Vector Indexing</div>
+                <div class="step-desc">Stored in FAISS</div>
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <div class="step-row">
+            <div class="step-icon icon-rag">&#128172;</div>
+            <div class="step-text">
+                <div class="step-title">RAG Chat Interface</div>
+                <div class="step-desc">GPT-4o-mini Response</div>
             </div>
         </div>
 
     </div>
 
-    <!-- FAISS Pipeline -->
-    <div class="faiss">
-        <div class="faiss-title">FAISS Vector Pipeline</div>
-        <div class="faiss-flow">
-            <div class="fb fb-doc">Document</div>
-            <div class="arrow-sm">&#9654;</div>
-            <div class="fb fb-chunk">Chunk</div>
-            <div class="arrow-sm">&#9654;</div>
-            <div class="fb fb-embed">Embed</div>
-            <div class="arrow-sm">&#9654;</div>
-            <div class="fb fb-index">FAISS Index</div>
-            <div class="arrow-sm">&#9654;</div>
-            <div class="fb fb-disk">Disk</div>
-        </div>
-    </div>
-
-    <!-- Storage -->
-    <div class="storage">
-        <div class="storage-title">storage/ directory</div>
-        <div class="storage-grid">
-            <div class="storage-item"><strong>{id}.md</strong>Content</div>
-            <div class="storage-item"><strong>.meta.json</strong>Metadata</div>
-            <div class="storage-item"><strong>faiss/</strong>Vector index</div>
-            <div class="storage-item"><strong>images/</strong>Extracted images</div>
-        </div>
-    </div>
-
-    <!-- Legend -->
-    <div class="legend">
-        <div class="legend-item"><div class="dot" style="background:#f97316;"></div> Upload</div>
-        <div class="legend-item"><div class="dot" style="background:#10b981;"></div> Scrape</div>
-        <div class="legend-item"><div class="dot" style="background:#8B5CF6;"></div> RAG</div>
-        <div class="legend-item"><div class="dot" style="background:#facc15;"></div> FAISS</div>
-    </div>
+    <div class="badge">&#9889; Proactive <span>|</span> Fast <span>|</span> Scalable</div>
 
 </body>
 </html>
