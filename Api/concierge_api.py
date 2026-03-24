@@ -104,10 +104,12 @@ def html_to_markdown(html: str) -> str:
         "h1", "h2", "h3", "h4", "h5", "h6",
         "p", "li", "pre", "blockquote", "dt", "dd",
         "td", "th", "figcaption", "label", "summary",
+        "button",
     }
 
     lines = []
     prev_text = None
+    captured_texts = set()
 
     for elem in body.descendants:
         if elem.name is None or elem.name not in BLOCK_TAGS:
@@ -121,6 +123,7 @@ def html_to_markdown(html: str) -> str:
             continue
 
         prev_text = text
+        captured_texts.add(text)
 
         tag = elem.name
         if tag == "h1":               lines.append(f"# {text}")
@@ -131,8 +134,25 @@ def html_to_markdown(html: str) -> str:
         elif tag == "dt":             lines.append(f"**{text}**")
         elif tag == "pre":            lines.append(f"```\n{text}\n```")
         elif tag == "blockquote":     lines.append(f"> {text}")
-        elif tag == "summary":        lines.append(f"**Q: {text}**")
+        elif tag in ("summary", "button"):
+            lines.append(f"**Q. {text}**")
         else:                         lines.append(text)
+        lines.append("")
+
+    # ── Catch text in leaf <div>/<span> elements missed by BLOCK_TAGS ──
+    # This captures FAQ questions and other content in non-standard elements
+    # (e.g. accordion headers in <div> or <span> tags).
+    for elem in body.descendants:
+        if elem.name not in ("div", "span", "a"):
+            continue
+        # Skip if this element has block-level children (it's a wrapper)
+        if any(c.name in BLOCK_TAGS or c.name in ("div",) for c in elem.children if c.name):
+            continue
+        text = elem.get_text(separator=" ", strip=True)
+        if not text or len(text) < 5 or text in captured_texts:
+            continue
+        captured_texts.add(text)
+        lines.append(text)
         lines.append("")
 
     result = "\n".join(lines).strip()
