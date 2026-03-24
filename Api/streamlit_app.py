@@ -399,102 +399,110 @@ hr { border-color: var(--border) !important; margin: 1.5rem 0 !important; }
     line-height: 1.5;
 }
 
-/* ══ Floating Chat Widget ══ */
-.chat-fab {
-    position: fixed; bottom: 28px; right: 28px; z-index: 9999;
-    width: 56px; height: 56px; border-radius: 50%;
-    background: #3a3a50; border: 2px solid #4a4a62;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    font-size: 1.4rem; color: #e8e8ef;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-.chat-fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(0,0,0,0.6); }
-
-.chat-widget {
-    position: fixed; bottom: 96px; right: 28px; z-index: 9998;
-    width: 370px; max-height: 520px;
+/* ══ Chat ══ */
+.chat-box {
     background: var(--bg-2);
-    border: 1px solid var(--border-2);
-    border-radius: 16px;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.55);
-    display: flex; flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
     overflow: hidden;
+    box-shadow: var(--shadow);
 }
-
-.cw-header {
+.chat-header {
     background: var(--bg);
     border-bottom: 1px solid var(--border);
-    padding: 12px 16px;
+    padding: 12px 18px;
     display: flex; align-items: center; gap: 10px;
 }
-.cw-avatar {
-    width: 32px; height: 32px; border-radius: 8px;
+.chat-avatar {
+    width: 36px; height: 36px; border-radius: 10px;
     background: #3a3a50;
     display: flex; align-items: center; justify-content: center;
-    font-size: 0.8rem; color: #b0b0c0; font-weight: 700;
+    font-size: 0.85rem; color: #b0b0c0; font-weight: 700;
 }
-.cw-header-name { font-weight: 600; font-size: 0.85rem; color: var(--text); }
-.cw-header-status {
-    font-size: 0.65rem; color: var(--green);
-    display: flex; align-items: center; gap: 4px;
+.chat-header-name {
+    font-weight: 600; font-size: 0.9rem;
+    color: var(--text); font-family: 'Inter', sans-serif;
 }
-.cw-header-status::before {
+.chat-header-status {
+    font-size: 0.7rem; color: var(--green);
+    font-family: 'Inter', sans-serif;
+    display: flex; align-items: center; gap: 5px;
+}
+.chat-header-status::before {
     content: ''; width: 5px; height: 5px;
-    border-radius: 50%; background: var(--green); display: inline-block;
+    border-radius: 50%; background: var(--green);
+    display: inline-block;
+}
+.chat-header-badge {
+    margin-left: auto;
+    font-size: 0.66rem; color: var(--text-3);
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg-2);
+    padding: 3px 9px; border-radius: 100px;
+    border: 1px solid var(--border);
 }
 
-.cw-messages {
-    flex: 1; padding: 14px;
+.chat-messages {
+    padding: 18px;
+    min-height: 340px; max-height: 480px;
     overflow-y: auto;
-    display: flex; flex-direction: column; gap: 8px;
+    display: flex; flex-direction: column; gap: 10px;
     background: var(--bg);
-    max-height: 360px; min-height: 200px;
 }
 
-.cw-ts { text-align: center; font-size: 0.58rem; color: var(--text-3); font-family: 'JetBrains Mono', monospace; margin: 2px 0; }
+.chat-ts { text-align: center; font-size: 0.62rem; color: var(--text-3); font-family: 'JetBrains Mono', monospace; margin: 3px 0; }
 
-.cw-msg-user { display: flex; justify-content: flex-end; gap: 6px; align-items: flex-end; }
-.cw-msg-user-bubble {
-    background: #3a3a50; color: #e8e8ef;
-    padding: 8px 12px; border-radius: 12px 12px 4px 12px;
-    font-size: 0.8rem; max-width: 75%; line-height: 1.5;
+.msg-user { display: flex; justify-content: flex-end; gap: 8px; align-items: flex-end; }
+.msg-user-bubble {
+    background: #3a3a50;
+    color: #e8e8ef; padding: 9px 14px;
+    border-radius: 14px 14px 4px 14px;
+    font-size: 0.86rem; max-width: 70%;
+    line-height: 1.55; font-family: 'Inter', sans-serif;
+}
+.msg-user-av {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: #3a3a50;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem; color: #b0b0c0; font-weight: 600; flex-shrink: 0;
 }
 
-.cw-msg-bot { display: flex; justify-content: flex-start; gap: 6px; align-items: flex-end; }
-.cw-msg-bot-av {
-    width: 22px; height: 22px; border-radius: 50%;
+.msg-bot { display: flex; justify-content: flex-start; gap: 8px; align-items: flex-end; }
+.msg-bot-av {
+    width: 26px; height: 26px; border-radius: 50%;
     background: var(--surface-3); border: 1px solid var(--border);
     display: flex; align-items: center; justify-content: center;
-    font-size: 0.6rem; flex-shrink: 0; color: var(--text-2);
+    font-size: 0.7rem; flex-shrink: 0; color: var(--text-2);
 }
-.cw-msg-bot-bubble {
-    background: var(--bg-2); border: 1px solid var(--border);
-    color: var(--text); padding: 8px 12px;
-    border-radius: 12px 12px 12px 4px;
-    font-size: 0.8rem; max-width: 80%; line-height: 1.5;
+.msg-bot-bubble {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 14px 14px 14px 4px;
+    font-size: 0.86rem; max-width: 78%;
+    line-height: 1.6; font-family: 'Inter', sans-serif;
     box-shadow: var(--shadow-sm);
 }
-.cw-msg-bot-bubble strong { color: var(--text); }
-.cw-msg-bot-bubble ul, .cw-msg-bot-bubble ol { margin: 4px 0 4px 14px; padding: 0; }
-.cw-msg-bot-bubble li { margin-bottom: 1px; color: var(--text-2); font-size: 0.78rem; }
-.cw-msg-bot-bubble p { margin: 0 0 4px 0; color: var(--text); }
-.cw-msg-bot-bubble p:last-child { margin-bottom: 0; }
+.msg-bot-bubble strong { color: var(--text); }
+.msg-bot-bubble ul, .msg-bot-bubble ol { margin: 5px 0 5px 16px; padding: 0; }
+.msg-bot-bubble li { margin-bottom: 2px; color: var(--text-2); }
+.msg-bot-bubble p { margin: 0 0 6px 0; color: var(--text); }
+.msg-bot-bubble p:last-child { margin-bottom: 0; }
 
-.cw-empty {
+.chat-empty {
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    height: 200px; gap: 8px;
+    height: 280px; gap: 10px;
 }
-.cw-empty-icon { font-size: 1.8rem; }
-.cw-empty-title { font-size: 0.85rem; font-weight: 600; color: var(--text-2); }
-.cw-empty-sub { font-size: 0.72rem; color: var(--text-3); }
-
-/* ── Hide the floating chat streamlit container chrome ── */
-div[data-testid="stVerticalBlock"]:has(> .floating-chat-anchor) {
-    position: fixed !important; bottom: 96px; right: 28px; z-index: 9998;
-    width: 370px !important;
+.chat-empty-icon {
+    width: 50px; height: 50px; border-radius: 14px;
+    background: var(--surface-3); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
 }
+.chat-empty-title { font-size: 0.92rem; font-weight: 600; color: var(--text-2); }
+.chat-empty-sub { font-size: 0.78rem; color: var(--text-3); }
 
 /* ══ Empty State ══ */
 .empty-state {
@@ -599,7 +607,7 @@ st.sidebar.markdown('<div style="font-size:0.6rem;font-weight:600;text-transform
 
 page = st.sidebar.radio(
     "nav",
-    ["Files", "Upload", "Index Tools"],
+    ["Files", "Upload", "RAG Chat", "Index Tools"],
     label_visibility="collapsed",
 )
 
@@ -931,6 +939,111 @@ elif page == "Upload":
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# RAG CHAT PAGE
+# ═══════════════════════════════════════════════════════════════════════════════
+elif page == "RAG Chat":
+
+    if "chat_msgs" not in st.session_state:
+        st.session_state["chat_msgs"] = []
+    if "chat_topk" not in st.session_state:
+        st.session_state["chat_topk"] = 5
+
+    col_h, col_c = st.columns([5, 1])
+    with col_h:
+        st.markdown("""
+        <div class="page-hero">
+          <div class="page-hero-icon">&#128172;</div>
+          <div class="page-hero-text">
+            <h1>RAG Chat</h1>
+            <div class="page-hero-sub">Ask questions &mdash; answers grounded in your indexed documents</div>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col_c:
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        if st.button("Clear Chat", use_container_width=True):
+            st.session_state["chat_msgs"] = []
+            st.rerun()
+
+    stats, _ = api("GET", "/rag/index/stats")
+    if stats:
+        n_docs = stats.get("total_documents", 0)
+        n_vecs = stats.get("total_vectors", 0)
+        topk   = st.session_state["chat_topk"]
+        st.markdown(f"""
+        <div class="stat-pills">
+          <span class="stat-pill"><span class="stat-pill-dot"></span> <strong>{n_docs}</strong> docs indexed</span>
+          <span class="stat-pill"><span class="stat-pill-dot"></span> <strong>{n_vecs}</strong> vectors</span>
+          <span class="stat-pill">top_k = <strong>{topk}</strong></span>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Chat messages
+    msgs = st.session_state["chat_msgs"]
+    if not msgs:
+        body_html = """
+        <div class="chat-empty">
+          <div class="chat-empty-icon">&#128172;</div>
+          <div class="chat-empty-title">Start a conversation</div>
+          <div class="chat-empty-sub">Ask anything about your indexed documents</div>
+        </div>"""
+    else:
+        body_html = ""
+        for m in msgs:
+            ts = m.get("ts", "")
+            body_html += f'<div class="chat-ts">{ts}</div>'
+            if m["role"] == "user":
+                body_html += f"""
+                <div class="msg-user">
+                  <div class="msg-user-bubble">{m['content']}</div>
+                  <div class="msg-user-av">U</div>
+                </div>"""
+            else:
+                content_html = md_to_html(m["content"])
+                body_html += f"""
+                <div class="msg-bot">
+                  <div class="msg-bot-av">C</div>
+                  <div class="msg-bot-bubble">{content_html}</div>
+                </div>"""
+
+    st.markdown(f"""
+    <div class="chat-box">
+      <div class="chat-header">
+        <div class="chat-avatar">C</div>
+        <div>
+          <div class="chat-header-name">Document Assistant</div>
+          <div class="chat-header-status">Online &middot; GPT-4o</div>
+        </div>
+        <div class="chat-header-badge">FAISS RAG</div>
+      </div>
+      <div class="chat-messages">{body_html}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    ci, cs = st.columns([5, 1])
+    with ci:
+        query = st.text_input("message", placeholder="Ask something about your documents...", label_visibility="collapsed", key="chat_inp")
+    with cs:
+        send = st.button("Send", type="primary", use_container_width=True)
+
+    with st.expander("Settings"):
+        st.session_state["chat_topk"] = st.slider(
+            "Chunks to retrieve (top_k)", 1, 20, st.session_state["chat_topk"],
+            help="Higher values = more context but slower and costlier."
+        )
+
+    if send and query.strip():
+        st.session_state["chat_msgs"].append({"role": "user", "content": query.strip(), "ts": now_str()})
+        with st.spinner("Searching and generating..."):
+            data, err = api("POST", "/rag/query", json={"query": query.strip(), "top_k": st.session_state["chat_topk"]})
+        answer = f"Error: {err}" if err else data.get("answer", "No answer returned.")
+        st.session_state["chat_msgs"].append({"role": "assistant", "content": answer, "ts": now_str()})
+        st.rerun()
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # INDEX TOOLS PAGE
 # ═══════════════════════════════════════════════════════════════════════════════
 elif page == "Index Tools":
@@ -1013,111 +1126,3 @@ elif page == "Index Tools":
             st.error(err)
         else:
             st.success(f"API is running: {data.get('message', 'OK')}")
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# FLOATING CHAT WIDGET (appears on every page)
-# ═══════════════════════════════════════════════════════════════════════════════
-if "chat_msgs" not in st.session_state:
-    st.session_state["chat_msgs"] = []
-if "chat_topk" not in st.session_state:
-    st.session_state["chat_topk"] = 5
-if "chat_open" not in st.session_state:
-    st.session_state["chat_open"] = False
-
-# Toggle button in sidebar
-st.sidebar.markdown("---")
-if st.sidebar.button("💬 Chat Assistant", use_container_width=True):
-    st.session_state["chat_open"] = not st.session_state["chat_open"]
-    st.rerun()
-
-if st.session_state["chat_open"]:
-    # Build messages HTML
-    msgs = st.session_state["chat_msgs"]
-    if not msgs:
-        body_html = """
-        <div class="cw-empty">
-          <div class="cw-empty-icon">&#128172;</div>
-          <div class="cw-empty-title">Ask me anything</div>
-          <div class="cw-empty-sub">About your indexed documents</div>
-        </div>"""
-    else:
-        body_html = ""
-        for m in msgs:
-            ts = m.get("ts", "")
-            body_html += f'<div class="cw-ts">{ts}</div>'
-            if m["role"] == "user":
-                body_html += f"""
-                <div class="cw-msg-user">
-                  <div class="cw-msg-user-bubble">{m["content"]}</div>
-                </div>"""
-            else:
-                content_html = md_to_html(m["content"])
-                body_html += f"""
-                <div class="cw-msg-bot">
-                  <div class="cw-msg-bot-av">C</div>
-                  <div class="cw-msg-bot-bubble">{content_html}</div>
-                </div>"""
-
-    # Render the floating widget as HTML + Streamlit input
-    st.markdown(f"""
-    <div class="chat-widget" id="chatWidget">
-      <div class="cw-header">
-        <div class="cw-avatar">C</div>
-        <div>
-          <div class="cw-header-name">Document Assistant</div>
-          <div class="cw-header-status">Online</div>
-        </div>
-      </div>
-      <div class="cw-messages" id="cwMessages">{body_html}</div>
-    </div>
-    <script>
-      var el = document.getElementById('cwMessages');
-      if (el) el.scrollTop = el.scrollHeight;
-    </script>
-    """, unsafe_allow_html=True)
-
-    # Chat input row (rendered at the bottom of the page, but functional)
-    chat_c1, chat_c2, chat_c3 = st.columns([4, 1, 1])
-    with chat_c1:
-        query = st.text_input("msg", placeholder="Type a message...", label_visibility="collapsed", key="chat_inp")
-    with chat_c2:
-        send = st.button("Send", type="primary", use_container_width=True, key="chat_send")
-    with chat_c3:
-        if st.button("Clear", use_container_width=True, key="chat_clear"):
-            st.session_state["chat_msgs"] = []
-            st.rerun()
-
-    if send and query.strip():
-        st.session_state["chat_msgs"].append({"role": "user", "content": query.strip(), "ts": now_str()})
-        with st.spinner("Thinking..."):
-            data, err = api("POST", "/rag/query", json={"query": query.strip(), "top_k": st.session_state["chat_topk"]})
-        answer = f"Error: {err}" if err else data.get("answer", "No answer returned.")
-        st.session_state["chat_msgs"].append({"role": "assistant", "content": answer, "ts": now_str()})
-        st.rerun()
-
-else:
-    # Show floating chat button when closed
-    st.markdown("""
-    <style>
-      .chat-fab-hint {
-        position: fixed; bottom: 28px; right: 28px; z-index: 9999;
-        pointer-events: none;
-      }
-      .chat-fab-hint .fab-dot {
-        width: 56px; height: 56px; border-radius: 50%;
-        background: #3a3a50; border: 2px solid #4a4a62;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.4rem; color: #e8e8ef;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        animation: fab-pulse 2s infinite;
-      }
-      @keyframes fab-pulse {
-        0%, 100% { box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        50% { box-shadow: 0 4px 28px rgba(78,202,122,0.3); }
-      }
-    </style>
-    <div class="chat-fab-hint">
-      <div class="fab-dot">&#128172;</div>
-    </div>
-    """, unsafe_allow_html=True)
