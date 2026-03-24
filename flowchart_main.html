@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Content Manager API (main.py) - System Flow</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0a0a1a, #1a1a3e, #0f2027);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #f97316, #facc15);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle { color: #aaa; margin-bottom: 12px; font-size: 1.1rem; }
+        .port-badge {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 6px 18px;
+            font-size: 0.9rem;
+            color: #facc15;
+            margin-bottom: 30px;
+        }
+
+        /* ── Startup Section ── */
+        .startup-row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .startup-box {
+            background: linear-gradient(135deg, #1e3a5f, #2563EB);
+            padding: 14px 28px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 1rem;
+            box-shadow: 0 6px 24px rgba(37,99,235,0.3);
+        }
+        .startup-arrow { font-size: 1.5rem; color: #555; }
+
+        .arrow { font-size: 2rem; color: #555; line-height: 1; margin: 8px 0; }
+        .arrow-label {
+            color: #888;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        /* ── Main Paths ── */
+        .paths {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            flex-wrap: wrap;
+            width: 100%;
+            max-width: 1200px;
+        }
+        .path-card {
+            flex: 1;
+            min-width: 260px;
+            max-width: 320px;
+            border-radius: 20px;
+            padding: 22px 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        .path-upload  { background: linear-gradient(135deg, #f97316, #ea580c); }
+        .path-scrape  { background: linear-gradient(135deg, #10b981, #059669); }
+        .path-rag     { background: linear-gradient(135deg, #8B5CF6, #7C3AED); }
+        .path-manage  { background: linear-gradient(135deg, #3B82F6, #2563EB); }
+
+        .path-icon { font-size: 2.4rem; }
+        .path-title { font-size: 1.15rem; font-weight: 700; letter-spacing: 0.5px; }
+        .path-endpoint {
+            background: rgba(0,0,0,0.3);
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-family: monospace;
+            letter-spacing: 0.5px;
+        }
+
+        .step {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(4px);
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            width: 100%;
+            text-align: center;
+        }
+        .step-arrow { color: rgba(255,255,255,0.45); font-size: 1.1rem; }
+
+        .decision {
+            background: rgba(255,255,255,0.25);
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            width: 100%;
+            text-align: center;
+            border: 2px dashed rgba(255,255,255,0.5);
+        }
+
+        .branch-row {
+            display: flex;
+            gap: 6px;
+            width: 100%;
+        }
+        .branch {
+            flex: 1;
+            padding: 7px 4px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            text-align: center;
+            font-weight: 600;
+        }
+        .b-pdf  { background: #dc2626; }
+        .b-img  { background: #0891b2; }
+        .b-docx { background: #7c3aed; }
+        .b-txt  { background: #4b5563; }
+
+        .outcome-row {
+            display: flex;
+            gap: 6px;
+            width: 100%;
+        }
+        .outcome {
+            flex: 1;
+            padding: 8px 4px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            text-align: center;
+            font-weight: 600;
+        }
+        .outcome-green { background: #22c55e; }
+        .outcome-amber { background: #f59e0b; color: #000; }
+        .outcome-gray  { background: #6b7280; }
+
+        /* ── FAISS Section ── */
+        .faiss-section {
+            margin-top: 30px;
+            max-width: 1200px;
+            width: 100%;
+            text-align: center;
+        }
+        .faiss-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+            color: #facc15;
+        }
+        .faiss-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .faiss-box {
+            padding: 14px 22px;
+            border-radius: 14px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+        }
+        .fb-doc    { background: linear-gradient(135deg, #f97316, #ea580c); }
+        .fb-chunk  { background: linear-gradient(135deg, #10b981, #059669); }
+        .fb-embed  { background: linear-gradient(135deg, #8B5CF6, #7C3AED); }
+        .fb-index  { background: linear-gradient(135deg, #facc15, #eab308); color: #000; }
+        .fb-disk   { background: linear-gradient(135deg, #6b7280, #4b5563); }
+        .faiss-arrow { font-size: 1.5rem; color: #555; }
+
+        /* ── Legend ── */
+        .legend {
+            margin-top: 30px;
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #ccc;
+        }
+        .legend-dot {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+        }
+
+        /* ── Storage Section ── */
+        .storage-section {
+            margin-top: 30px;
+            max-width: 700px;
+            width: 100%;
+        }
+        .storage-title {
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 12px;
+        }
+        .storage-grid {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .storage-item {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            padding: 12px 18px;
+            font-size: 0.85rem;
+            text-align: center;
+            min-width: 140px;
+        }
+        .storage-item strong {
+            display: block;
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Admin Content Manager API</h1>
+    <p class="subtitle">main.py &mdash; FastAPI Backend</p>
+    <div class="port-badge">Port 8000 &bull; OpenAI + FAISS + Docling</div>
+
+    <!-- ── Startup ── -->
+    <div class="startup-row">
+        <div class="startup-box">App Starts</div>
+        <div class="startup-arrow">&#9654;</div>
+        <div class="startup-box">Load FAISS Index from Disk</div>
+        <div class="startup-arrow">&#9654;</div>
+        <div class="startup-box">API Ready &amp; Listening</div>
+    </div>
+
+    <div class="arrow">&#9660;</div>
+    <div class="arrow-label">4 core API flows</div>
+
+    <!-- ── Main Paths ── -->
+    <div class="paths">
+
+        <!-- PATH 1: Upload -->
+        <div class="path-card path-upload">
+            <div class="path-icon">&#128196;</div>
+            <div class="path-title">Upload File</div>
+            <div class="path-endpoint">POST /upload</div>
+
+            <div class="step">Receive file from admin</div>
+            <div class="step-arrow">&#9660;</div>
+
+            <div class="decision">Detect file type</div>
+            <div class="branch-row">
+                <div class="branch b-pdf">PDF</div>
+                <div class="branch b-img">Image</div>
+                <div class="branch b-docx">DOCX</div>
+                <div class="branch b-txt">TXT/MD</div>
+            </div>
+            <div class="step-arrow">&#9660;</div>
+
+            <div class="step">Convert to Markdown via Docling / python-docx / raw read</div>
+            <div class="step-arrow">&#9660;</div>
+            <div class="step">Save .md + .meta.json + .json</div>
+            <div class="step-arrow">&#9660;</div>
+            <div class="step">Chunk &amp; embed into FAISS</div>
+            <div class="step-arrow">&#9660;</div>
+            <div class="outcome-row">
+                <div class="outcome outcome-green">Indexed!</div>
+            </div>
+        </div>
+
+        <!-- PATH 2: Scrape -->
+        <div class="path-card path-scrape">
+            <div class="path-icon">&#127760;</div>
+            <div class="path-title">Scrape Website</div>
+            <div class="path-endpoint">POST /scrape</div>
+
+            <div class="step">Fetch URL with httpx</div>
+            <div class="step-arrow">&#9660;</div>
+            <div class="step">Strip scripts, nav, footer</div>
+            <div class="step-arrow">&#9660;</div>
+            <div class="step">Convert HTML &#8594; Markdown</div>
+            <div class="step-arrow">&#9660;</div>
+            <div class="step">Save .md + .meta.json</div>
+            <div class="step-arrow">&#9660;</div>
+            <div class="step">Chunk &amp; embed into FAISS</div>
+            <div class="step-arrow">&#9660;</div>
+            <div class="outcome-row">
+                <div class="outcome outcome-green">Indexed!</div>
+            </div>
+        </div>
+
+        <!-- PATH 3: RAG Query -->
+        <div class="path-card path-rag">
+            <div class="path-icon">&#128172;</div>
+            <div class="path-title">RAG Query</div>
+            <div class="path-endpoint">POST /rag/query</div>
+
+            <div class="step">Receive user question</div>
+            <div class="step-arrow">&#9660;</div>
+            <div class="step">Embed query (text-embedding-3-small)</div>
+            <div class="step-arrow">&#9660;</div>
+            <div class="step">Search FAISS for top-k chunks</div>
+            <div class="step-arrow">&#9660;</div>
+            <div class="decision">Chunks found?</div>
+            <div class="step-arrow">&#9660;</div>
+            <div class="step">Send context + question to GPT-4o-mini</div>
+            <div class="step-arrow">&#9660;</div>
+            <div class="outcome-row">
+                <div class="outcome outcome-green">Answer</div>
+                <div class="outcome outcome-gray">No docs</div>
+            </div>
+        </div>
+
+        <!-- PATH 4: Content CRUD -->
+        <div class="path-card path-manage">
+            <div class="path-icon">&#128736;</div>
+            <div class="path-title">Content Management</div>
+            <div class="path-endpoint">CRUD endpoints</div>
+
+            <div class="step">GET /files<br>List all documents</div>
+            <div class="step-arrow">&#9660;</div>
+            <div class="step">GET /content/{id}<br>Read document</div>
+            <div class="step-arrow">&#9660;</div>
+            <div class="step">PUT /content<br>Edit &amp; re-index</div>
+            <div class="step-arrow">&#9660;</div>
+            <div class="step">DELETE /content/{id}<br>Remove file + FAISS chunks</div>
+            <div class="step-arrow">&#9660;</div>
+            <div class="step">POST /rag/index/rebuild<br>Re-index everything</div>
+            <div class="step-arrow">&#9660;</div>
+            <div class="outcome-row">
+                <div class="outcome outcome-amber">Updated!</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── FAISS Pipeline ── -->
+    <div class="faiss-section">
+        <div class="faiss-title">FAISS Vector Pipeline (shared by Upload, Scrape, Edit)</div>
+        <div class="faiss-flow">
+            <div class="faiss-box fb-doc">Document</div>
+            <div class="faiss-arrow">&#9654;</div>
+            <div class="faiss-box fb-chunk">Chunk (500 words, 50 overlap)</div>
+            <div class="faiss-arrow">&#9654;</div>
+            <div class="faiss-box fb-embed">Embed via OpenAI</div>
+            <div class="faiss-arrow">&#9654;</div>
+            <div class="faiss-box fb-index">FAISS L2 Index</div>
+            <div class="faiss-arrow">&#9654;</div>
+            <div class="faiss-box fb-disk">Persist to Disk</div>
+        </div>
+    </div>
+
+    <!-- ── Storage Layout ── -->
+    <div class="storage-section">
+        <div class="storage-title">storage/ directory structure</div>
+        <div class="storage-grid">
+            <div class="storage-item"><strong>{id}.md</strong>Markdown content</div>
+            <div class="storage-item"><strong>{id}.meta.json</strong>Metadata (type, url, date)</div>
+            <div class="storage-item"><strong>{id}.json</strong>Structured extraction</div>
+            <div class="storage-item"><strong>faiss/index.faiss</strong>Vector index</div>
+            <div class="storage-item"><strong>faiss/index_meta.json</strong>Chunk metadata</div>
+            <div class="storage-item"><strong>images/</strong>Extracted images</div>
+        </div>
+    </div>
+
+    <!-- ── Legend ── -->
+    <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#f97316;"></div> File Upload</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#10b981;"></div> Web Scraping</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#8B5CF6;"></div> RAG Query</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3B82F6;"></div> Content CRUD</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#facc15;"></div> FAISS Index</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#22c55e;"></div> Success</div>
+    </div>
+
+</body>
+</html>
