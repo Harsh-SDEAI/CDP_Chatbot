@@ -13,209 +13,83 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 32px 48px;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #1a1a2e;
         }
 
-        /* Header */
-        .header {
-            text-align: center;
-            margin-bottom: 28px;
-            flex-shrink: 0;
-        }
-        .header h1 { font-size: 2rem; font-weight: 700; }
-        .header .sub { color: #888; font-size: 1rem; margin-top: 4px; }
+        h1 { font-size: 2rem; font-weight: 700; margin-bottom: 32px; }
 
-        /* 2-column grid */
         .grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            max-width: 900px;
-            width: 100%;
+            gap: 60px;
         }
 
-        /* Column */
-        .col {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-            align-items: center;
-        }
-        .col-title {
-            font-size: 1.05rem;
+        .col { display: flex; flex-direction: column; align-items: center; }
+
+        .label {
+            font-size: 1.1rem;
             font-weight: 700;
             color: #fff;
-            padding: 8px 24px;
+            padding: 8px 28px;
             border-radius: 24px;
-            margin-bottom: 16px;
-            flex-shrink: 0;
-            letter-spacing: 0.3px;
+            margin-bottom: 20px;
         }
-        .col-title.green { background: linear-gradient(135deg, #10b981, #059669); }
-        .col-title.blue  { background: linear-gradient(135deg, #0ea5e9, #3b82f6); }
+        .label.green { background: #10b981; }
+        .label.blue  { background: #3b82f6; }
 
-        /* Step card */
-        .step {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            width: 100%;
-            padding: 16px 20px;
+        .box {
+            width: 260px;
+            padding: 16px;
             background: #fff;
-            border: 1px solid #e8eaef;
-            border-radius: 14px;
-            transition: box-shadow 0.2s;
-        }
-        .step:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-
-        .step-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
-            flex-shrink: 0;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
         }
 
-        .ig { background: #ecfdf5; color: #10b981; }
-        .ip { background: #f0e6ff; color: #8b5cf6; }
-        .ib { background: #e0f2fe; color: #0ea5e9; }
-        .ir { background: #fff1f2; color: #f43f5e; }
-        .iy { background: #fef9c3; color: #ca8a04; }
-        .ii { background: #eef2ff; color: #6366f1; }
-
-        .step-text { display: flex; flex-direction: column; min-width: 0; }
-        .step-title { font-size: 1.05rem; font-weight: 700; color: #1a1a2e; }
-        .step-desc  { font-size: 0.85rem; color: #999; margin-top: 2px; }
-
-        /* Connector */
-        .conn {
+        .line {
             width: 2px;
-            height: 14px;
-            border-radius: 2px;
-            flex-shrink: 0;
+            height: 16px;
+            background: #d1d5db;
         }
-        .cg { background: linear-gradient(180deg, #bbf7d0, #22c55e); }
-        .cb { background: linear-gradient(180deg, #bae6fd, #0ea5e9); }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>Concierge API</h1>
-        <div class="sub">concierge_api.py &mdash; FastAPI &bull; Port 8001</div>
-    </div>
+    <h1>Concierge API</h1>
 
     <div class="grid">
 
-        <!-- ── COLUMN 1: Scrape + Monitor ── -->
         <div class="col">
-            <div class="col-title green">Scrape &amp; Monitor</div>
-
-            <div class="step">
-                <div class="step-icon ig">&#127760;</div>
-                <div class="step-text">
-                    <div class="step-title">Fetch Webpage</div>
-                    <div class="step-desc">HTTP GET via httpx</div>
-                </div>
-            </div>
-            <div class="conn cg"></div>
-            <div class="step">
-                <div class="step-icon ir">&#128296;</div>
-                <div class="step-text">
-                    <div class="step-title">Clean HTML</div>
-                    <div class="step-desc">Strip scripts, nav, footer</div>
-                </div>
-            </div>
-            <div class="conn cg"></div>
-            <div class="step">
-                <div class="step-icon ip">&#128221;</div>
-                <div class="step-text">
-                    <div class="step-title">Convert to Markdown</div>
-                    <div class="step-desc">Structured text output</div>
-                </div>
-            </div>
-            <div class="conn cg"></div>
-            <div class="step">
-                <div class="step-icon iy">&#128274;</div>
-                <div class="step-text">
-                    <div class="step-title">SHA-256 Hash Check</div>
-                    <div class="step-desc">Skip if content unchanged</div>
-                </div>
-            </div>
-            <div class="conn cg"></div>
-            <div class="step">
-                <div class="step-icon ig">&#128190;</div>
-                <div class="step-text">
-                    <div class="step-title">Save .md + .meta.json</div>
-                    <div class="step-desc">Persist to disk</div>
-                </div>
-            </div>
-            <div class="conn cg"></div>
-            <div class="step">
-                <div class="step-icon ii">&#9200;</div>
-                <div class="step-text">
-                    <div class="step-title">Auto-Monitor (1h cycle)</div>
-                    <div class="step-desc">Scheduler re-checks URLs</div>
-                </div>
-            </div>
+            <div class="label green">Scrape &amp; Monitor</div>
+            <div class="box">Fetch Webpage</div>
+            <div class="line"></div>
+            <div class="box">Clean HTML</div>
+            <div class="line"></div>
+            <div class="box">Convert to Markdown</div>
+            <div class="line"></div>
+            <div class="box">SHA-256 Hash Check</div>
+            <div class="line"></div>
+            <div class="box">Save to Disk</div>
+            <div class="line"></div>
+            <div class="box">Auto-Monitor (1h)</div>
         </div>
 
-        <!-- ── COLUMN 2: RAG Query ── -->
         <div class="col">
-            <div class="col-title blue">RAG Query</div>
-
-            <div class="step">
-                <div class="step-icon ib">&#10067;</div>
-                <div class="step-text">
-                    <div class="step-title">User Question</div>
-                    <div class="step-desc">"What about dining?"</div>
-                </div>
-            </div>
-            <div class="conn cb"></div>
-            <div class="step">
-                <div class="step-icon ib">&#9889;</div>
-                <div class="step-text">
-                    <div class="step-title">Query to Embedding</div>
-                    <div class="step-desc">Convert to vector</div>
-                </div>
-            </div>
-            <div class="conn cb"></div>
-            <div class="step">
-                <div class="step-icon iy">&#128270;</div>
-                <div class="step-text">
-                    <div class="step-title">Search FAISS</div>
-                    <div class="step-desc">Top 10 similar chunks</div>
-                </div>
-            </div>
-            <div class="conn cb"></div>
-            <div class="step">
-                <div class="step-icon ip">&#128221;</div>
-                <div class="step-text">
-                    <div class="step-title">Build Context</div>
-                    <div class="step-desc">Combine matched chunks</div>
-                </div>
-            </div>
-            <div class="conn cb"></div>
-            <div class="step">
-                <div class="step-icon ii">&#129302;</div>
-                <div class="step-text">
-                    <div class="step-title">Send to GPT</div>
-                    <div class="step-desc">Prompt + context + question</div>
-                </div>
-            </div>
-            <div class="conn cb"></div>
-            <div class="step">
-                <div class="step-icon ig">&#128172;</div>
-                <div class="step-text">
-                    <div class="step-title">Return Answer</div>
-                    <div class="step-desc">Answer + sources to user</div>
-                </div>
-            </div>
+            <div class="label blue">RAG Query</div>
+            <div class="box">User Question</div>
+            <div class="line"></div>
+            <div class="box">Generate Embedding</div>
+            <div class="line"></div>
+            <div class="box">Search FAISS</div>
+            <div class="line"></div>
+            <div class="box">Build Context</div>
+            <div class="line"></div>
+            <div class="box">Send to GPT</div>
+            <div class="line"></div>
+            <div class="box">Return Answer</div>
         </div>
 
     </div>
