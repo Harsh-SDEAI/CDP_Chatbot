@@ -28,6 +28,42 @@
             margin-bottom: 36px;
         }
 
+        /* Old Approach Box */
+        .old-approach {
+            max-width: 420px;
+            width: 100%;
+            background: #fff5f5;
+            border: 1px solid #fecaca;
+            border-radius: 14px;
+            padding: 20px 24px;
+            margin-bottom: 32px;
+        }
+        .old-approach-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #dc2626;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .old-approach-desc {
+            font-size: 0.85rem;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* New Approach label */
+        .new-approach-label {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #16a34a;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         /* Pipeline */
         .pipeline {
             display: flex;
@@ -111,6 +147,15 @@
 
     <h1>Admin Content Manager</h1>
     <p class="subtitle">main.py &mdash; FastAPI Backend &bull; Port 8000</p>
+
+    <div class="old-approach">
+        <div class="old-approach-title">&#10060; Old Approach</div>
+        <div class="old-approach-desc">
+            The CDPAssist team provided us the data and we performed the whole task manually &mdash; from uploading to indexing to saving the file.
+        </div>
+    </div>
+
+    <div class="new-approach-label">&#9989; New Approach (Automated Pipeline)</div>
 
     <div class="pipeline">
 
