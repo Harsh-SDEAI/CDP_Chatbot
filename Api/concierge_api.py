@@ -81,7 +81,7 @@ class UpdateMonitorRequest(BaseModel):
 
 class RAGQueryRequest(BaseModel):
     query: str
-    top_k: int = 3
+    top_k: int = 10
 
 
 # ─── Hashing ─────────────────────────────────────────────────────────────────
@@ -240,7 +240,7 @@ def _get_embedding(text: str) -> np.ndarray:
     return np.array(response.data[0].embedding, dtype=np.float32)
 
 
-def _chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> List[str]:
+def _chunk_text(text: str, chunk_size: int = 1500, overlap: int = 200) -> List[str]:
     words = text.split()
     chunks = []
     i = 0
@@ -709,8 +709,8 @@ def rag_query(body: RAGQueryRequest):
 
     response = ai.chat.completions.create(
         model="gpt-5-mini",
-        max_completion_tokens=1000,
-        temperature=0.7,
+        max_completion_tokens=3000,
+        temperature=1,
         messages=[
             {
                 "role": "system",

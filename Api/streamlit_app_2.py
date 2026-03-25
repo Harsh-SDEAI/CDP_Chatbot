@@ -382,7 +382,7 @@ if "chat_history" not in st.session_state:
 if "chat_open" not in st.session_state:
     st.session_state["chat_open"] = False
 if "chat_topk" not in st.session_state:
-    st.session_state["chat_topk"] = 3
+    st.session_state["chat_topk"] = 5
 
 # Toggle in sidebar
 st.sidebar.markdown("---")
