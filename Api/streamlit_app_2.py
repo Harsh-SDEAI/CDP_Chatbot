@@ -8,7 +8,6 @@ Run: streamlit run streamlit_app_2.py --server.port 8502
 import streamlit as st
 import requests
 from datetime import datetime
-from functools import lru_cache
 
 # ── Page Config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -20,10 +19,8 @@ st.set_page_config(
 
 # ── Dark Grey Theme CSS ───────────────────────────────────────────────────────
 st.markdown("""
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
     --bg:             #1e1e2e;
@@ -197,27 +194,13 @@ h3 { font-size: 0.95rem !important; font-weight: 600 !important; }
 
 # ── API Helper ────────────────────────────────────────────────────────────────
 
-def _api_call(method: str, url: str, timeout: int, **kwargs):
-    """Raw API call — separated so caching can wrap GET calls."""
-    resp = getattr(requests, method)(url, timeout=timeout, **kwargs)
-    resp.raise_for_status()
-    return resp.json()
-
-
-@st.cache_data(ttl=30, show_spinner=False)
-def _cached_get(url: str):
-    """Cache GET responses for 30 seconds to avoid redundant calls."""
-    return _api_call("get", url, timeout=10)
-
-
 def api(method: str, path: str, **kwargs):
     base = st.session_state.get("api_base", "http://localhost:8001")
     url = f"{base}{path}"
     try:
-        if method == "get" and not kwargs:
-            return _cached_get(url)
-        # POST/DELETE/PUT — short timeout, no cache
-        return _api_call(method, url, timeout=15, **kwargs)
+        resp = getattr(requests, method)(url, timeout=60, **kwargs)
+        resp.raise_for_status()
+        return resp.json()
     except requests.exceptions.ConnectionError:
         st.error(f"Cannot connect to API at {base}. Is concierge_api.py running?")
         return None
@@ -272,7 +255,6 @@ if page == "Monitor":
                 with st.spinner("Scraping and indexing..."):
                     result = api("post", "/monitor", json={"url": new_url, "interval_hours": interval_hours})
                 if result:
-                    _cached_get.clear()
                     st.success(f"Now monitoring! File: `{result.get('file_id')}`")
                     st.rerun()
             else:
@@ -289,7 +271,6 @@ if page == "Monitor":
             with st.spinner("Checking all URLs..."):
                 result = api("post", "/monitor/check-now")
             if result:
-                _cached_get.clear()
                 for r in result.get("results", []):
                     status = r.get("status", "unknown")
                     if status == "updated":
@@ -339,7 +320,6 @@ if page == "Monitor":
                 # Remove button
                 if st.button(f"Remove", key=f"rm_{entry.get('file_id', '')}"):
                     api("delete", f"/monitor/{entry['file_id']}")
-                    _cached_get.clear()
                     st.rerun()
 
 
@@ -372,7 +352,6 @@ elif page == "Files":
                 with col3:
                     if st.button("Delete", key=f"del_{file_id}"):
                         api("delete", f"/content/{file_id}")
-                        _cached_get.clear()
                         if st.session_state.get("view_file") == file_id:
                             del st.session_state["view_file"]
                         st.rerun()
