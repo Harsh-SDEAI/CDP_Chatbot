@@ -526,7 +526,7 @@ hr { border-color: var(--border) !important; margin: 1.5rem 0 !important; }
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
-BASE_URL = st.sidebar.text_input("API Base URL", value="http://localhost:8000").rstrip("/")
+BASE_URL = st.sidebar.text_input("API Base URL", value="http://localhost:8080").rstrip("/")
 
 
 def api(method, path, **kwargs):
