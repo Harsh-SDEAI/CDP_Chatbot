@@ -102,92 +102,6 @@ h3 { font-size: 0.95rem !important; font-weight: 600 !important; }
     margin-bottom: 0.75rem;
     box-shadow: var(--shadow-sm);
 }
-
-/* ══ Floating Chat Widget ══ */
-.cw {
-    position: fixed; bottom: 96px; right: 28px; z-index: 9998;
-    width: 360px; max-height: 500px;
-    background: var(--bg-2);
-    border: 1px solid var(--border-2);
-    border-radius: 16px;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.55);
-    display: flex; flex-direction: column;
-    overflow: hidden;
-}
-.cw-head {
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-    padding: 10px 14px;
-    display: flex; align-items: center; gap: 10px;
-}
-.cw-av {
-    width: 30px; height: 30px; border-radius: 8px;
-    background: #3a3a50;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.75rem; color: #b0b0c0; font-weight: 700;
-}
-.cw-name { font-weight: 600; font-size: 0.82rem; color: var(--text); }
-.cw-status {
-    font-size: 0.62rem; color: var(--green);
-    display: flex; align-items: center; gap: 4px;
-}
-.cw-status::before {
-    content: ''; width: 5px; height: 5px;
-    border-radius: 50%; background: var(--green); display: inline-block;
-}
-.cw-msgs {
-    flex: 1; padding: 12px;
-    overflow-y: auto;
-    display: flex; flex-direction: column; gap: 8px;
-    background: var(--bg);
-    max-height: 340px; min-height: 180px;
-}
-.cw-ts { text-align: center; font-size: 0.56rem; color: var(--text-3); font-family: 'JetBrains Mono', monospace; margin: 2px 0; }
-.cw-u { display: flex; justify-content: flex-end; }
-.cw-u-b {
-    background: #3a3a50; color: #e8e8ef;
-    padding: 7px 11px; border-radius: 12px 12px 4px 12px;
-    font-size: 0.78rem; max-width: 78%; line-height: 1.45;
-}
-.cw-b { display: flex; justify-content: flex-start; gap: 6px; align-items: flex-end; }
-.cw-b-av {
-    width: 20px; height: 20px; border-radius: 50%;
-    background: var(--surface-3); border: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.55rem; flex-shrink: 0; color: var(--text-2);
-}
-.cw-b-b {
-    background: var(--bg-2); border: 1px solid var(--border);
-    color: var(--text); padding: 7px 11px;
-    border-radius: 12px 12px 12px 4px;
-    font-size: 0.78rem; max-width: 80%; line-height: 1.5;
-    box-shadow: var(--shadow-sm);
-}
-.cw-b-b p { margin: 0 0 4px; color: var(--text); }
-.cw-b-b p:last-child { margin: 0; }
-.cw-empty {
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    height: 180px; gap: 6px; color: var(--text-3);
-}
-.cw-empty span { font-size: 1.6rem; }
-.cw-empty b { font-size: 0.82rem; color: var(--text-2); }
-.cw-empty small { font-size: 0.7rem; }
-
-.fab-hint {
-    position: fixed; bottom: 28px; right: 28px; z-index: 9999;
-    width: 52px; height: 52px; border-radius: 50%;
-    background: #3a3a50; border: 2px solid #4a4a62;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.3rem; color: #e8e8ef;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    pointer-events: none;
-    animation: fab-glow 2s infinite;
-}
-@keyframes fab-glow {
-    0%,100% { box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-    50% { box-shadow: 0 4px 28px rgba(78,202,122,0.3); }
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -224,7 +138,7 @@ with st.sidebar:
     st.caption("Content Monitor & RAG Chat")
     st.markdown("---")
 
-    page = st.radio("Navigate", ["Monitor", "Files"], label_visibility="collapsed")
+    page = st.radio("Navigate", ["Monitor", "Files", "RAG Chat"], label_visibility="collapsed")
 
     st.markdown("---")
     st.session_state["api_base"] = st.text_input(
@@ -373,87 +287,61 @@ elif page == "Files":
                     )
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# FLOATING CHAT WIDGET (appears on every page)
-# ═══════════════════════════════════════════════════════════════════════════════
+# ── Page: RAG Chat ───────────────────────────────────────────────────────────
 
-if "chat_history" not in st.session_state:
-    st.session_state["chat_history"] = []
-if "chat_open" not in st.session_state:
-    st.session_state["chat_open"] = False
-if "chat_topk" not in st.session_state:
-    st.session_state["chat_topk"] = 5
+elif page == "RAG Chat":
+    st.markdown("# RAG Chat")
+    st.caption("Ask questions grounded in your scraped content")
 
-# Toggle in sidebar
-st.sidebar.markdown("---")
-if st.sidebar.button("💬 Chat Assistant", use_container_width=True):
-    st.session_state["chat_open"] = not st.session_state["chat_open"]
-    st.rerun()
+    # Index stats
+    stats = api("get", "/rag/index/stats")
+    if stats:
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Documents Indexed", stats.get("total_documents", 0))
+        with col2:
+            st.metric("Total Vectors", stats.get("total_vectors", 0))
 
-if st.session_state["chat_open"]:
-    msgs = st.session_state["chat_history"]
-    if not msgs:
-        body = """
-        <div class="cw-empty">
-          <span>&#128172;</span>
-          <b>Ask me anything</b>
-          <small>About your scraped content</small>
-        </div>"""
-    else:
-        body = ""
-        for m in msgs:
-            ts = m.get("ts", "")
-            if ts:
-                body += f'<div class="cw-ts">{ts}</div>'
-            if m["role"] == "user":
-                body += f'<div class="cw-u"><div class="cw-u-b">{m["content"]}</div></div>'
+    st.markdown("---")
+
+    # Top-k slider
+    top_k = st.slider("Number of context chunks", min_value=1, max_value=20, value=5)
+
+    # Chat history
+    if "chat_history" not in st.session_state:
+        st.session_state["chat_history"] = []
+
+    # Display chat history
+    for msg in st.session_state["chat_history"]:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    # Chat input
+    query = st.chat_input("Ask a question about your content...")
+    if query:
+        st.session_state["chat_history"].append({"role": "user", "content": query})
+        with st.chat_message("user"):
+            st.markdown(query)
+
+        with st.chat_message("assistant"):
+            with st.spinner("Searching and generating answer..."):
+                result = api("post", "/rag/query", json={"query": query, "top_k": top_k})
+
+            if result:
+                answer = result.get("answer", "No answer returned.")
+                sources = result.get("sources", [])
+                chunks_used = result.get("chunks_used", 0)
+
+                st.markdown(answer)
+                if sources:
+                    st.caption(f"Sources: {', '.join(sources)} ({chunks_used} chunks used)")
+
+                st.session_state["chat_history"].append({"role": "assistant", "content": answer})
             else:
-                body += f"""
-                <div class="cw-b">
-                  <div class="cw-b-av">C</div>
-                  <div class="cw-b-b"><p>{m["content"]}</p></div>
-                </div>"""
+                st.error("Failed to get a response from the RAG API.")
 
-    st.markdown(f"""
-    <div class="cw">
-      <div class="cw-head">
-        <div class="cw-av">C</div>
-        <div>
-          <div class="cw-name">Document Assistant</div>
-          <div class="cw-status">Online</div>
-        </div>
-      </div>
-      <div class="cw-msgs" id="cwMsgs">{body}</div>
-    </div>
-    <script>
-      var el = document.getElementById('cwMsgs');
-      if (el) el.scrollTop = el.scrollHeight;
-    </script>
-    """, unsafe_allow_html=True)
-
-    # Input row
-    c1, c2, c3 = st.columns([4, 1, 1])
-    with c1:
-        query = st.text_input("msg", placeholder="Type a message...", label_visibility="collapsed", key="cw_inp")
-    with c2:
-        send = st.button("Send", type="primary", use_container_width=True, key="cw_send")
-    with c3:
-        if st.button("Clear", use_container_width=True, key="cw_clear"):
+    # Clear chat
+    if st.session_state["chat_history"]:
+        if st.button("Clear Chat"):
             st.session_state["chat_history"] = []
             st.rerun()
-
-    if send and query.strip():
-        now = datetime.now().strftime("%H:%M")
-        st.session_state["chat_history"].append({"role": "user", "content": query.strip(), "ts": now})
-        with st.spinner("Thinking..."):
-            result = api("post", "/rag/query", json={"query": query.strip(), "top_k": st.session_state["chat_topk"]})
-        if result:
-            answer = result.get("answer", "No answer returned.")
-        else:
-            answer = "Error: could not get a response."
-        st.session_state["chat_history"].append({"role": "assistant", "content": answer, "ts": now})
-        st.rerun()
-
-else:
-    # Floating bubble hint when chat is closed
-    st.markdown('<div class="fab-hint">&#128172;</div>', unsafe_allow_html=True)
