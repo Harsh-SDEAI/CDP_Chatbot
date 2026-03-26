@@ -111,9 +111,7 @@ h3 { font-size: 0.95rem !important; font-weight: 600 !important; }
 def _default_api_base():
     """Auto-detect API base URL so teammates on the same network don't need to change it."""
     try:
-        from streamlit.web.server.websocket_headers import _get_websocket_headers
-        headers = _get_websocket_headers()
-        host = headers.get("Host", "localhost:8502").split(":")[0]
+        host = st.context.headers.get("Host", "localhost:8502").split(":")[0]
     except Exception:
         host = "localhost"
     return f"http://{host}:8001"
