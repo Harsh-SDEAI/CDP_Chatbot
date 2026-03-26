@@ -50,7 +50,7 @@ Expand All
 
 We are your local experts let us tell you how to do Cooperstown in 5 days.
 
-Plan early arrival. Arrive in Cooperstown prior to your tournaments Day 1 to acclimate.
+Plan early arrival. Arrive in Cooperstown prior to your tournaments Day 1 to acclimate.
 Take advantage and attend the prior tournaments' Championship Game.
 
 Spend less time driving and more time enjoying your stay in Cooperstown
@@ -139,7 +139,8 @@ We would recommend a four-hour window to enjoy all that The Cooperstown museums 
 
 Expand All
 
-Cooperstown offers a variety of accommodations to suit different preferences.
+Q. What are the types of accommodations in the Cooperstown Core?
+A. Cooperstown offers a variety of accommodations to suit different preferences.
 
 Hotels: There are several hotels ranging from budget-friendly options to more upscale accommodations, like the Otesaga Resort Hotel.
 
@@ -149,11 +150,13 @@ Vacation Rentals: You can find various vacation homes, cottages, and cabins avai
 
 No matter what type of stay you’re looking for, you’ll find something that suits your needs in Cooperstown if you book early.
 
-It is recommended you book your housing as soon as possible.
-Booking sooner is better than later. Booking early ensures you have the
+Q. When should I book housing?
+A. It is recommended you book your housing as soon as possible.
+Booking sooner is better than later. Booking early ensures you have the
 best selection and rates.
 
-When booking housing in Cooperstown, consider these factors:
+Q. What are somethings to consider when booking housing in Cooperstown?
+A. When booking housing in Cooperstown, consider these factors:
 
 Location: Choose a place close to Dreams Park and in the Core. Take advantage of a Core location.
 
@@ -165,8 +168,8 @@ Budget: Compare prices and consider any additional fees or deposits.
 
 Reviews: Read reviews from previous guests to ensure the destination meets your expectations.
 
-Otesaga Resort Hotel, Landmark Inn, Best Western Cooperstown Inn
-& Suites, Inn at Cooperstown, and Holiday Inn Express & Suites
+Otesaga Resort Hotel, Landmark Inn, Best Western Cooperstown Inn
+& Suites, Inn at Cooperstown, and Holiday Inn Express & Suites
 Cooperstown.
 
 It’s a good idea to start booking a campsite in Cooperstown as early as possible. Booking sooner is better than later. Booking early ensures you have the best selection and rates. This way, you can ensure a great camping experience!
@@ -189,9 +192,9 @@ Activities: Look for campgrounds that offer activities like hiking, fishing, or 
 
 Hartwick Highlands Campground, Beaver Valley Campground, and Cooperstown Family Campground.
 
-Norbu is a popular choice for Indian Cuisine in Cooperstown. They
-offer dishes like chicken tikka masala and garlic naan. They are open
-daily for lunch from 11:30 am to 2:45 pm, and dinner from 4:30 pm to
+Norbu is a popular choice for Indian Cuisine in Cooperstown. They
+offer dishes like chicken tikka masala and garlic naan. They are open
+daily for lunch from 11:30 am to 2:45 pm, and dinner from 4:30 pm to
 9:00 pm.
 
 New York Pizzeria offers a variety of options including classic NY Style pizzas, wings, boneless wings, garlic knots, and chicken parmesan. Customers have praised New York Pizzeria for it's friendly service and quality food.
@@ -280,7 +283,7 @@ Visit Howe Caverns, Animal Adventure Park & Preserve, Water Safari, Niagara Fall
 
 In addition to the Cooperstown Concierge, the Cooperstown Dreams Park App is designed to help guests naviagate the Dreams Park Experience. It provides information to guests including teams, team contacts, parents & relatives, as well as team guests. Our app provides up-to-the-minute news and notifications about events, weather-related delays, and general inforamtion, as well as Dreams Park TV to watch live streamed baseball games broadcasted from our facilities.
 
-The Cooperstown Dreams Park App will provide vital information in the days prior to your arrival and support you throughout your time on site. Prepare for your trip, download and
+The Cooperstown Dreams Park App will provide vital information in the days prior to your arrival and support you throughout your time on site. Prepare for your trip, download and
 share the Cooperstown Dreams Park App with your team and family today!
 
 ## CONTACT
