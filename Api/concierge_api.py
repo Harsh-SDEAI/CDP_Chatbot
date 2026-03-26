@@ -707,13 +707,12 @@ def rag_query(body: RAGQueryRequest):
     context_parts = [chunk["text"] for chunk in chunks]
     context = "\n\n---\n\n".join(context_parts)
 
-    try:
-        response = ai.chat.completions.create(
-            model="gpt-5-mini",
-            max_completion_tokens=3000,
-            temperature=0.3,
-            messages=[
-                {
+    response = ai.chat.completions.create(
+        model="gpt-5-mini",
+        max_completion_tokens=3000,
+        temperature=0.3,
+        messages=[
+            {
                 "role": "system",
                 "content": (
                     "You are the Cooperstown Concierge — a warm, friendly, and knowledgeable guide "
@@ -768,14 +767,10 @@ def rag_query(body: RAGQueryRequest):
                 "role": "user",
                 "content": f"Context:\n{context}\n\nQuestion: {body.query}",
             },
-            ],
-        )
+        ],
+    )
 
-        answer = response.choices[0].message.content.strip()
-    except Exception as e:
-        print(f"[RAG] OpenAI API error: {e}")
-        answer = ("I'm sorry, I had trouble processing that question. "
-                  "Could you try rephrasing it or asking something more specific?")
+    answer = response.choices[0].message.content.strip()
 
     sources = list({chunk["file_id"] for chunk in chunks})
     return {"answer": answer, "sources": sources, "chunks_used": len(chunks)}
