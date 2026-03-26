@@ -168,16 +168,13 @@ Budget: Compare prices and consider any additional fees or deposits.
 
 Reviews: Read reviews from previous guests to ensure the destination meets your expectations.
 
-Q. What are some popular recommended destinations?
-A. Otesaga Resort Hotel, Landmark Inn, Best Western Cooperstown Inn
+Otesaga Resort Hotel, Landmark Inn, Best Western Cooperstown Inn
 & Suites, Inn at Cooperstown, and Holiday Inn Express & Suites
 Cooperstown.
 
-Q. When should I book a campsite?
-A. It’s a good idea to start booking a campsite in Cooperstown as early as possible. Booking sooner is better than later. Booking early ensures you have the best selection and rates. This way, you can ensure a great camping experience!
+It’s a good idea to start booking a campsite in Cooperstown as early as possible. Booking sooner is better than later. Booking early ensures you have the best selection and rates. This way, you can ensure a great camping experience!
 
-Q. What are somethings to consider when choosing a campground in Cooperstown?
-A. When choosing a campground in Cooperstown, consider these factors:
+When choosing a campground in Cooperstown, consider these factors:
 
 Location: Choose a place close to Dreams Park and in the Core. Take advantage of a Core location.
 
@@ -193,68 +190,48 @@ Reviews: Read reviews from previous campers to get an idea of the experience.
 
 Activities: Look for campgrounds that offer activities like hiking, fishing, or guided tours.
 
-Q. What are some popular recommended campgrounds?
-A. Hartwick Highlands Campground, Beaver Valley Campground, and Cooperstown Family Campground.
+Hartwick Highlands Campground, Beaver Valley Campground, and Cooperstown Family Campground.
 
-Q. Is there any recommended international cuisine in Cooperstown?
-A. Norbu is a popular choice for Indian Cuisine in Cooperstown. They
+Norbu is a popular choice for Indian Cuisine in Cooperstown. They
 offer dishes like chicken tikka masala and garlic naan. They are open
 daily for lunch from 11:30 am to 2:45 pm, and dinner from 4:30 pm to
 9:00 pm.
 
-Q. Are there any recommended pizza places in Cooperstown?
-A. New York Pizzeria offers a variety of options including classic NY Style pizzas, wings, boneless wings, garlic knots, and chicken parmesan. Customers have praised New York Pizzeria for it's friendly service and quality food.
+New York Pizzeria offers a variety of options including classic NY Style pizzas, wings, boneless wings, garlic knots, and chicken parmesan. Customers have praised New York Pizzeria for it's friendly service and quality food.
 
-Q. What are the best restaurants for a team party in Cooperstown?
-A. Cooperstown offers several restaurants suitable for team gatherings. The Hawkeye Bar & Grill, located in the Otesaga Resort Hotel, is known for its elevated comfort food and can accommodate large groups. Lake Front Restaurant & Bar is a casual, family-oriented sport with a spacious deck, ideal for hosting teams. Upstate Bar & Grill offers a vibrant atmosphere and caters to private events.
+Cooperstown offers several restaurants suitable for team gatherings. The Hawkeye Bar & Grill, located in the Otesaga Resort Hotel, is known for its elevated comfort food and can accommodate large groups. Lake Front Restaurant & Bar is a casual, family-oriented sport with a spacious deck, ideal for hosting teams. Upstate Bar & Grill offers a vibrant atmosphere and caters to private events.
 
-Q. Are there catering options for team parties?
-A. New York Pizzeria offers great pizza and Italian dishes that can be easily catered for a larger group. They have a range of menu items that work well for a team party, like pizza, wings, and garlic knots. Toscana Italian Fusion provides an upscale yet relaxed dining experience with Italian cuisine. They also offer catering services for groups and special events. The Otesaga Resort Hotel offers full-service event catering and has experience hosting larger groups. You can expect elegant service with customized menus for team parties.
+New York Pizzeria offers great pizza and Italian dishes that can be easily catered for a larger group. They have a range of menu items that work well for a team party, like pizza, wings, and garlic knots. Toscana Italian Fusion provides an upscale yet relaxed dining experience with Italian cuisine. They also offer catering services for groups and special events. The Otesaga Resort Hotel offers full-service event catering and has experience hosting larger groups. You can expect elegant service with customized menus for team parties.
 
-Q. What are some recommended family-friendly restaurants?
-A. A great family-friendly restaurant in Cooperstown is Doubleday Cafe. They offer a diverse menu with something for everyone, from burgers and sandwiches to salads and kids’ meals. The atmosphere is welcoming and it’s a nice spot for families to enjoy a meal together. Plus, it’s conveniently located in the heart of Cooperstown, making it easy to access after a visit to the Hall of Fame or a day of exploring the town.
+A great family-friendly restaurant in Cooperstown is Doubleday Cafe. They offer a diverse menu with something for everyone, from burgers and sandwiches to salads and kids’ meals. The atmosphere is welcoming and it’s a nice spot for families to enjoy a meal together. Plus, it’s conveniently located in the heart of Cooperstown, making it easy to access after a visit to the Hall of Fame or a day of exploring the town.
 
-Q. Are there any farm-to-table dining options in Cooperstown?
-A. Origins Café is a fantastic option for farm-to-table dining in Cooperstown. Known for its commitment to using locally sourced, organic ingredients, Origins offers a menu full of fresh and flavorful dishes. The café features a variety of options, including sandwiches, salads, and hot entrees, all made with seasonal ingredients from nearby farms. The cozy atmosphere and focus on sustainability make it a great spot for those looking to enjoy a wholesome, delicious meal in a relaxed setting. It’s definitely a must-try for anyone seeking fresh, locally inspired cuisine.
+Origins Café is a fantastic option for farm-to-table dining in Cooperstown. Known for its commitment to using locally sourced, organic ingredients, Origins offers a menu full of fresh and flavorful dishes. The café features a variety of options, including sandwiches, salads, and hot entrees, all made with seasonal ingredients from nearby farms. The cozy atmosphere and focus on sustainability make it a great spot for those looking to enjoy a wholesome, delicious meal in a relaxed setting. It’s definitely a must-try for anyone seeking fresh, locally inspired cuisine.
 
-Q. Is there any recommended lakeside dining with view?
-A. The Lake Front Restaurant & Bar is located on the shores of Otesgo Lake, this restaurant offers beautiful views of the lake while serving a variety of dishes, including seafood, burgers, and seasonal specials. The outdoor seating area allows you to enjoy the view while dining. The Hawkeye Bar & Grill is situated along the lake, this restaurant has a lovely outdoor patio that overlooks the water. It serves upscale comfort food and offers a relaxing atmosphere with stunning views of Otsego Lake. The Blue Mingo Grill is a great option for on-the-lake dining in Cooperstown. It offers a relaxed atmosphere with beautiful views of Otsego Lake. The restaurant is known for its Caribbean-inspired menu, featuring fresh seafood, grilled meats, and tropical flavors. The outdoor seating area allows diners to enjoy the scenic lake views while savoring their meal. It’s a great sport for a casual yet flavorful dining experience with a scenic backdrop. If you are looking for something a bit different from traditional lakeside dining, Blue Mingo is definitely worth considering.
+The Lake Front Restaurant & Bar is located on the shores of Otesgo Lake, this restaurant offers beautiful views of the lake while serving a variety of dishes, including seafood, burgers, and seasonal specials. The outdoor seating area allows you to enjoy the view while dining. The Hawkeye Bar & Grill is situated along the lake, this restaurant has a lovely outdoor patio that overlooks the water. It serves upscale comfort food and offers a relaxing atmosphere with stunning views of Otsego Lake. The Blue Mingo Grill is a great option for on-the-lake dining in Cooperstown. It offers a relaxed atmosphere with beautiful views of Otsego Lake. The restaurant is known for its Caribbean-inspired menu, featuring fresh seafood, grilled meats, and tropical flavors. The outdoor seating area allows diners to enjoy the scenic lake views while savoring their meal. It’s a great sport for a casual yet flavorful dining experience with a scenic backdrop. If you are looking for something a bit different from traditional lakeside dining, Blue Mingo is definitely worth considering.
 
-Q. Can you recommend a place with American comfort food?
-A. J&D’s Wagon Wheel is a cozy eatery that offers a menu featuring classic American comfort food, including pulled pork, cheesesteaks, wings, burgers and fries. The establishment has a friendly atmosphere, making it a popular sport for both locals and visitors.
+J&D’s Wagon Wheel is a cozy eatery that offers a menu featuring classic American comfort food, including pulled pork, cheesesteaks, wings, burgers and fries. The establishment has a friendly atmosphere, making it a popular sport for both locals and visitors.
 
-Q. Are there any recommended Ice Cream Shops?
-A. Cooper’s Barn is a great spot for ice cream in the Cooperstown Core. In addition to their menu of delicious comfort food and grilled items, they also offer a variety of ice cream flavors, making it a perfect stop for a sweet treat. It is a casual, family-friendly place where you can enjoy both savory meals and dessert. If you’re craving ice cream after a meal or just looking for a quick treat, Cooper’s Barn is definitely worth a visit. The Inside Scoop, is another great spot for ice cream. They offer a variety of flavors and treats, and it’s a popular local spot known for it’s friendly service and delicious offerings.
+Cooper’s Barn is a great spot for ice cream in the Cooperstown Core. In addition to their menu of delicious comfort food and grilled items, they also offer a variety of ice cream flavors, making it a perfect stop for a sweet treat. It is a casual, family-friendly place where you can enjoy both savory meals and dessert. If you’re craving ice cream after a meal or just looking for a quick treat, Cooper’s Barn is definitely worth a visit. The Inside Scoop, is another great spot for ice cream. They offer a variety of flavors and treats, and it’s a popular local spot known for it’s friendly service and delicious offerings.
 
-Q. Are there any recommended take-out options?
-A. New York Pizzeria a local favorite for pizza, pasta, and Italian dishes. They offer great takeout options, including pizza by the slice and whole pies, along with a variety of pasta dishes and more. Jive Café is known for its sandwiches, wraps, and salads. Jive Café offers a range of healthy and delicious takeout options, including vegetarian and vegan friendly choices. It’s a popular sport for a quick and tasty meal. Danny’s Main Street Market is a popular local market offering a variety of fresh, high-quality products and convenient options for takeout. They offer a deli section and a variety of prepared foods, salads, and snacks, making it a great spot for grabbing a quick takeout meal.
+New York Pizzeria a local favorite for pizza, pasta, and Italian dishes. They offer great takeout options, including pizza by the slice and whole pies, along with a variety of pasta dishes and more. Jive Café is known for its sandwiches, wraps, and salads. Jive Café offers a range of healthy and delicious takeout options, including vegetarian and vegan friendly choices. It’s a popular sport for a quick and tasty meal. Danny’s Main Street Market is a popular local market offering a variety of fresh, high-quality products and convenient options for takeout. They offer a deli section and a variety of prepared foods, salads, and snacks, making it a great spot for grabbing a quick takeout meal.
 
-Q. Can you recommend any spots for an adult’s night out?
-A. After the games enjoy drinks downtown. Cooley’s is a great spot with a relaxed atmosphere and a good selection of beverages. It’s perfect for unwinding and socializing with friends. The fire pit at the Otesaga Resort Hotel offers a relaxing place to unwind and enjoy the evening with friends and family. A variety of cocktails, wines, and other drinks are served at the Fire Pit.
+After the games enjoy drinks downtown. Cooley’s is a great spot with a relaxed atmosphere and a good selection of beverages. It’s perfect for unwinding and socializing with friends. The fire pit at the Otesaga Resort Hotel offers a relaxing place to unwind and enjoy the evening with friends and family. A variety of cocktails, wines, and other drinks are served at the Fire Pit.
 
-Q. What are some popular recommended destinations?
-A. Norbu Restaurant, Origins Café, Toscana of Cooperstown, Doubleday Café, Bocca Osteria, NY Pizzeria, Jive Café, Hawkeye Bar & Grill, Cooper’s Barn, J&D’s Wagon Wheel
+Norbu Restaurant, Origins Café, Toscana of Cooperstown, Doubleday Café, Bocca Osteria, NY Pizzeria, Jive Café, Hawkeye Bar & Grill, Cooper’s Barn, J&D’s Wagon Wheel
 
-Q. What types of shops are in the Cooperstown Core?
-A. The Cooperstown Core has more than just baseball shops. There are boutiques, jewelry, and antique shops.
+The Cooperstown Core has more than just baseball shops. There are boutiques, jewelry, and antique shops.
 
-Q. Where can I purchase sporting goods and supplies?
-A. Dicks Sporting Goods is located in Oneonta.
+Dicks Sporting Goods is located in Oneonta.
 
-Q. Where can I purchase toiletries?
-A. Dollar General has basic supplies for your stay in Cooperstown.
+Dollar General has basic supplies for your stay in Cooperstown.
 
-Q. Are there popular locations for team parties?
-A. Barnyard Swing is an excellent venue for team parties. They offer private group events with activities like miniature golf, gem mining, and a dairy bar. Cooper’s Barn is a great venue for a team party. They offer a casual, laid-back atmosphere with a variety of dining options, perfect for groups. The restaurant features hearty comfort food and ice cream, making it ideal for both kids and adults. For team parties, they can accommodate large groups, and the setting is relaxed enough for everyone to enjoy the meal and socialize.
+Barnyard Swing is an excellent venue for team parties. They offer private group events with activities like miniature golf, gem mining, and a dairy bar. Cooper’s Barn is a great venue for a team party. They offer a casual, laid-back atmosphere with a variety of dining options, perfect for groups. The restaurant features hearty comfort food and ice cream, making it ideal for both kids and adults. For team parties, they can accommodate large groups, and the setting is relaxed enough for everyone to enjoy the meal and socialize.
 
-Q. What are some recommendations for a day on the lake?
-A. Boating & Kayaking: Rent a kayak, canoe, or paddleboard to explore the scenic beauty of Otsego Lake. There are rental options along the lakefront, and paddling around gives you a great view of the surrounding hills and wildlife. If you prefer a boat ride, consider renting a small motorboat or taking a guided tour on the lake. Swimming: There are designated swimming spots around the lake like at Glimmerglass State Park, which offers a sandy beach area. Picnicking at Glimmerglass State Park: Pack a picnic and head to Glimmerglass State Park. You can relax on the shore with great views of the lake and the surrounding landscape. It’s a lovely spot for enjoying some downtime with family or friends. Hiking: If you enjoy outdoor activities, check out some of the nearby trails. Glimmerglass State Park has easy hiking trails that offer beautiful views of the lake and surrounding forest. Fishing: Otsego Lake is known for great fishing opportunities. You can rent gear or bring your own, and fish for species like lake trout, bass, and perch. Many of the local marinas offer fishing gear for rent. Otsego Lake Boat Cruise: If you prefer a leisurely day, take a boat cruise to get a full tour of the lake and its surroundings. Some cruises are guided and provide interesting historical tidbits about the lake and Cooperstown.
+Boating & Kayaking: Rent a kayak, canoe, or paddleboard to explore the scenic beauty of Otsego Lake. There are rental options along the lakefront, and paddling around gives you a great view of the surrounding hills and wildlife. If you prefer a boat ride, consider renting a small motorboat or taking a guided tour on the lake. Swimming: There are designated swimming spots around the lake like at Glimmerglass State Park, which offers a sandy beach area. Picnicking at Glimmerglass State Park: Pack a picnic and head to Glimmerglass State Park. You can relax on the shore with great views of the lake and the surrounding landscape. It’s a lovely spot for enjoying some downtime with family or friends. Hiking: If you enjoy outdoor activities, check out some of the nearby trails. Glimmerglass State Park has easy hiking trails that offer beautiful views of the lake and surrounding forest. Fishing: Otsego Lake is known for great fishing opportunities. You can rent gear or bring your own, and fish for species like lake trout, bass, and perch. Many of the local marinas offer fishing gear for rent. Otsego Lake Boat Cruise: If you prefer a leisurely day, take a boat cruise to get a full tour of the lake and its surroundings. Some cruises are guided and provide interesting historical tidbits about the lake and Cooperstown.
 
-Q. Is there any recommended entertainment for adults?
-A. The Cooperstown Beverage Trail is an excellent way to discover local beverages in the Cooperstown Area. It includes a variety of breweries, wineries, and a distillery. It’s a fun way to taste the local flavors and enjoy a day out.
+The Cooperstown Beverage Trail is an excellent way to discover local beverages in the Cooperstown Area. It includes a variety of breweries, wineries, and a distillery. It’s a fun way to taste the local flavors and enjoy a day out.
 
-Q. Are there recommendations for sibling entertainment?
-A. The Cooperstown Core has a lot to offer beyond baseball. Here are some non-baseball activities you might enjoy:
+The Cooperstown Core has a lot to offer beyond baseball. Here are some non-baseball activities you might enjoy:
 
 Fenimore Art Museum: Explore American folk art, historical artifacts, and special exhibits.
 
@@ -266,20 +243,15 @@ Kayaking and Canoeing: Rent equipment and explore the scenic waterways around Ot
 
 These activities offer a great mix of culture, nature, and relaxation for a fund time in Cooperstown.
 
-Q. Would you recommend a trip to the Fly Creek Cider Mill?
-A. The Fly Creek Cider Mill is a delightful spot to visit. Here are some things you can do there. Sample Cider and Products: Enjoy tastings of their fresh-pressed apple cider, along with a variety of locally made products like jams, sauces, and baked goods. Explore the Mill: Take a tour of the historic mill and learn about the cider-making process. Shop for Local Goods: Browse their shop for unique gifts, gourmet foods and items made by local artisans. It’s a fun and tasty experience for all ages!
+The Fly Creek Cider Mill is a delightful spot to visit. Here are some things you can do there. Sample Cider and Products: Enjoy tastings of their fresh-pressed apple cider, along with a variety of locally made products like jams, sauces, and baked goods. Explore the Mill: Take a tour of the historic mill and learn about the cider-making process. Shop for Local Goods: Browse their shop for unique gifts, gourmet foods and items made by local artisans. It’s a fun and tasty experience for all ages!
 
-Q. What are some popular recommended destinations?
-A. Fly Creek Cider Mill, Barnyard Swing, National Baseball Hall of Fame and Museum, Fenimore Farm and Country Village, Brewery Ommegang
+Fly Creek Cider Mill, Barnyard Swing, National Baseball Hall of Fame and Museum, Fenimore Farm and Country Village, Brewery Ommegang
 
-Q. Where to find antiques?
-A. Wood Bull Antiques
+Wood Bull Antiques
 
-Q. What is the recommended contemporary art gallery in Cooperstown to visit?
-A. Just a mile from downtown Cooperstown, The Art Garage presents a contemporary edge to the local art scene. This gallery features exhibitions from a diverse range of artists, including outsider, emerging, and established talents. Its commitment to showcasing unconventional and thought-provoking art makes it a must-visit for those seeking a fresh perspective.
+Just a mile from downtown Cooperstown, The Art Garage presents a contemporary edge to the local art scene. This gallery features exhibitions from a diverse range of artists, including outsider, emerging, and established talents. Its commitment to showcasing unconventional and thought-provoking art makes it a must-visit for those seeking a fresh perspective.
 
-Q. Are there non-profit art galleries in Cooperstown?
-A. The Cooperstown Art Association is a non-profit gallery dedicated to promoting the visual arts within the community. The Cooperstown Art Association features three gallery spaces that showcase:
+The Cooperstown Art Association is a non-profit gallery dedicated to promoting the visual arts within the community. The Cooperstown Art Association features three gallery spaces that showcase:
 
 - Works by local and regional artists.
 
@@ -289,32 +261,25 @@ A. The Cooperstown Art Association is a non-profit gallery dedicated to promotin
 
 The association also offers art classes, workshops, and lectures, fostering an inclusive environment for artists and art enthusiasts alike.
 
-Q. Where to find hand made crafts?
-A. Cooper Country Crafts
+Cooper Country Crafts
 
-Q. What services are in the Cooperstown Core?
-A. Services in the Cooperstown Core include salons, dog boarding, vet clinic, laundromats, auto repair, florist and Village Library.
+Services in the Cooperstown Core include salons, dog boarding, vet clinic, laundromats, auto repair, florist and Village Library.
 
-Q. Where is the closest Urgent Care?
-A. WellNow is located at 5001 State Highway 23, Oneonta, NY
+WellNow is located at 5001 State Highway 23, Oneonta, NY
 
-Q. The closest Emergency Room?
-A. Bassett Healthcare Cooperstown NY
+Bassett Healthcare Cooperstown NY
 
-Q. Things to do on your way to Cooperstown or your trip home?
-A. Visit Howe Caverns, Animal Adventure Park & Preserve, Water Safari, Niagara Falls, NYC, Lake Placid, and Saratoga.
+Visit Howe Caverns, Animal Adventure Park & Preserve, Water Safari, Niagara Falls, NYC, Lake Placid, and Saratoga.
 
-Q. Places to stay?
-A.
-- Mountain Getaway House w/ Sweeping Views
+- - Mountain Getaway House w/ Sweeping Views
 
-- There is a beautiful property in the surrounding area call Upscale Property near Oneonta, Delhi & Bovina.
+- - There is a beautiful property in the surrounding area call Upscale Property near Oneonta, Delhi & Bovina.
 
-- Book a stay at Taste of Heaven Campground.
+- - Book a stay at Taste of Heaven Campground.
 
 - Inspired by the surrounding landscape, The Rock Retreat was designed to make your visit a unique, comfortable and relaxing experience. 4,000 sq ft, 6 bedrooms and 3 bathrooms, located on 200 acres of beautiful woods.
 
-- Hampton Inn - Oneonta
+- - Hampton Inn - Oneonta
 
 In addition to the Cooperstown Concierge, the Cooperstown Dreams Park App is designed to help guests naviagate the Dreams Park Experience. It provides information to guests including teams, team contacts, parents & relatives, as well as team guests. Our app provides up-to-the-minute news and notifications about events, weather-related delays, and general inforamtion, as well as Dreams Park TV to watch live streamed baseball games broadcasted from our facilities.
 
