@@ -192,9 +192,18 @@ h3 { font-size: 0.95rem !important; font-weight: 600 !important; color: var(--te
     color: var(--text) !important;
 }
 /* ── Chat input ── */
-[data-testid="stChatInput"] textarea {
+[data-testid="stChatInput"],
+[data-testid="stChatInput"] textarea,
+[data-testid="stBottom"] > div,
+.stChatInput, .stChatInput textarea {
     color: var(--text) !important;
     background: var(--bg-2) !important;
+}
+[data-testid="stBottom"] {
+    background: var(--bg) !important;
+}
+[data-testid="stChatInput"] textarea::placeholder {
+    color: var(--text-3) !important;
 }
 
 /* ── Slider ── */
