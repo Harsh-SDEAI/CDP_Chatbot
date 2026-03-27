@@ -438,10 +438,40 @@ async def check_monitored_urls():
 
 # ─── Lifespan (startup + shutdown) ───────────────────────────────────────────
 
+def _rebuild_faiss_if_needed():
+    """Re-index all documents if chunks are too large (old index with wrong chunk_size)."""
+    global _faiss_index, _faiss_meta
+    if not _faiss_meta:
+        # No index yet — try to index all existing .md files
+        for md_path in STORAGE_DIR.glob("*.md"):
+            file_id = md_path.stem
+            content = md_path.read_text(encoding="utf-8")
+            if content.strip():
+                print(f"[FAISS] Auto-indexing {file_id}...")
+                index_document(file_id, content)
+        return
+
+    # Check if existing chunks are too large (>400 words = old 1500-word chunks)
+    avg_words = sum(len(m["text"].split()) for m in _faiss_meta) / len(_faiss_meta)
+    if avg_words > 400:
+        print(f"[FAISS] Chunks too large (avg {avg_words:.0f} words). Rebuilding with 300-word chunks...")
+        _faiss_index = faiss.IndexFlatL2(EMBEDDING_DIM)
+        _faiss_meta = []
+        _save_faiss()
+        for md_path in STORAGE_DIR.glob("*.md"):
+            file_id = md_path.stem
+            content = md_path.read_text(encoding="utf-8")
+            if content.strip():
+                print(f"[FAISS] Re-indexing {file_id}...")
+                index_document(file_id, content)
+        print(f"[FAISS] Rebuild complete. {_faiss_index.ntotal} vectors.")
+
+
 @asynccontextmanager
 async def lifespan(app):
     # Startup
     _load_faiss()
+    _rebuild_faiss_if_needed()
     scheduler.add_job(check_monitored_urls, "interval", hours=1, id="monitor_job")
     scheduler.start()
     print("[Scheduler] Started — checking monitored URLs every 1 hour.")
