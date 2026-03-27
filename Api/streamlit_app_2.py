@@ -193,16 +193,39 @@ h3 { font-size: 0.95rem !important; font-weight: 600 !important; color: var(--te
 }
 /* ── Chat input ── */
 [data-testid="stChatInput"],
-[data-testid="stChatInput"] textarea,
-[data-testid="stBottom"] > div,
-.stChatInput, .stChatInput textarea {
+[data-testid="stChatInput"] *,
+.stChatInput, .stChatInput * {
     color: var(--text) !important;
-    background: var(--bg-2) !important;
+    background-color: var(--bg-2) !important;
 }
-[data-testid="stBottom"] {
-    background: var(--bg) !important;
+[data-testid="stChatInput"] textarea,
+.stChatInput textarea {
+    color: var(--text) !important;
+    background-color: var(--bg-2) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    caret-color: var(--text) !important;
 }
-[data-testid="stChatInput"] textarea::placeholder {
+[data-testid="stChatInput"] textarea:focus,
+.stChatInput textarea:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 2px rgba(45,108,223,0.15) !important;
+}
+[data-testid="stChatInput"] button,
+.stChatInput button {
+    color: var(--text-2) !important;
+    background-color: transparent !important;
+}
+[data-testid="stChatInput"] button:hover,
+.stChatInput button:hover {
+    color: var(--accent) !important;
+}
+[data-testid="stBottom"],
+[data-testid="stBottom"] > div {
+    background-color: var(--bg) !important;
+}
+[data-testid="stChatInput"] textarea::placeholder,
+.stChatInput textarea::placeholder {
     color: var(--text-3) !important;
 }
 
