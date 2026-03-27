@@ -714,7 +714,24 @@ async def check_now():
 
 @app.post("/rag/query")
 def rag_query(body: RAGQueryRequest):
-    chunks = search_index(body.query, top_k=body.top_k)
+    # Expand query: search both original + plural/singular variant for better FAISS hits
+    query_variants = [body.query]
+    q = body.query.strip()
+    if q.endswith("s"):
+        query_variants.append(q[:-1])       # "game times" → also search "game time"
+    else:
+        query_variants.append(q + "s")       # "game time" → also search "game times"
+
+    # Search FAISS with all variants and merge results (deduplicate by chunk text)
+    seen_texts = set()
+    all_chunks = []
+    for variant in query_variants:
+        results = search_index(variant, top_k=body.top_k)
+        for chunk in results:
+            if chunk["text"] not in seen_texts:
+                seen_texts.add(chunk["text"])
+                all_chunks.append(chunk)
+    chunks = all_chunks[:body.top_k]
 
     if not chunks:
         return {
