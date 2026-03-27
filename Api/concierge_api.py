@@ -714,19 +714,43 @@ async def check_now():
 
 @app.post("/rag/query")
 def rag_query(body: RAGQueryRequest):
-    # Expand query: search both original + plural/singular variant for better FAISS hits
-    query_variants = [body.query]
-    q = body.query.strip()
-    if q.endswith("s"):
-        query_variants.append(q[:-1])       # "game times" → also search "game time"
-    else:
-        query_variants.append(q + "s")       # "game time" → also search "game times"
+    # Step 1: Use GPT to extract search keywords from user's casual query
+    try:
+        keyword_resp = ai.chat.completions.create(
+            model="gpt-4o-mini",
+            max_completion_tokens=50,
+            temperature=0,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Extract 2-3 short search keywords from the user's question for searching a "
+                        "Cooperstown Dreams Park knowledge base. Return ONLY the keywords separated by commas. "
+                        "Examples:\n"
+                        "- 'provide me the game time' → 'game times, schedule'\n"
+                        "- 'where can I eat' → 'restaurants, dining, food'\n"
+                        "- 'places to stay' → 'accommodations, housing, hotels'\n"
+                        "- 'what is concierge' → 'concierge, about, services'"
+                    ),
+                },
+                {"role": "user", "content": body.query},
+            ],
+        )
+        keywords = keyword_resp.choices[0].message.content.strip()
+        print(f"[RAG] Extracted keywords: {keywords}")
+    except Exception as e:
+        print(f"[RAG] Keyword extraction failed: {e}")
+        keywords = ""
 
-    # Search FAISS with all variants and merge results (deduplicate by chunk text)
+    # Step 2: Search FAISS with original query + extracted keywords, merge results
+    search_queries = [body.query]
+    if keywords:
+        search_queries.append(keywords)
+
     seen_texts = set()
     all_chunks = []
-    for variant in query_variants:
-        results = search_index(variant, top_k=body.top_k)
+    for sq in search_queries:
+        results = search_index(sq, top_k=body.top_k)
         for chunk in results:
             if chunk["text"] not in seen_texts:
                 seen_texts.add(chunk["text"])
@@ -780,6 +804,15 @@ def rag_query(body: RAGQueryRequest):
         input_tokens = usage.prompt_tokens if usage else 0
         output_tokens = usage.completion_tokens if usage else 0
         total_tokens = usage.total_tokens if usage else 0
+        # Add keyword extraction tokens
+        try:
+            kw_usage = keyword_resp.usage
+            if kw_usage:
+                input_tokens += kw_usage.prompt_tokens
+                output_tokens += kw_usage.completion_tokens
+                total_tokens += kw_usage.total_tokens
+        except Exception:
+            pass
         print(f"[RAG] Tokens — input: {input_tokens}, output: {output_tokens}, total: {total_tokens}")
     except Exception as e:
         print(f"[RAG] OpenAI API error: {e}")
