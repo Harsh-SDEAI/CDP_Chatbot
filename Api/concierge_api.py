@@ -742,20 +742,29 @@ def rag_query(body: RAGQueryRequest):
         print(f"[RAG] Keyword extraction failed: {e}")
         keywords = ""
 
-    # Step 2: Search FAISS with original query + extracted keywords, merge results
+    # Step 2: Search FAISS with original query + extracted keywords + each keyword individually
     search_queries = [body.query]
     if keywords:
         search_queries.append(keywords)
+        # Also search each keyword individually for better coverage
+        for kw in keywords.split(","):
+            kw = kw.strip()
+            if kw:
+                search_queries.append(kw)
 
+    # Use higher internal top_k for better recall, then trim to requested top_k
+    internal_top_k = max(body.top_k, 15)
     seen_texts = set()
     all_chunks = []
     for sq in search_queries:
-        results = search_index(sq, top_k=body.top_k)
+        results = search_index(sq, top_k=internal_top_k)
         for chunk in results:
             if chunk["text"] not in seen_texts:
                 seen_texts.add(chunk["text"])
                 all_chunks.append(chunk)
-    chunks = all_chunks[:body.top_k]
+    # Sort by best score (lowest distance = most relevant) and trim
+    all_chunks.sort(key=lambda c: c.get("score", 999))
+    chunks = all_chunks[:max(body.top_k, 10)]
 
     if not chunks:
         return {
