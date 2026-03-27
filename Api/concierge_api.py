@@ -14,6 +14,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import hashlib
 import uuid
+import os
+import pyodbc
 import httpx
 from bs4 import BeautifulSoup
 from pathlib import Path
@@ -82,6 +84,23 @@ class UpdateMonitorRequest(BaseModel):
 class RAGQueryRequest(BaseModel):
     query: str
     top_k: int = 10
+
+class ChatSaveRequest(BaseModel):
+    session_id: str
+    question: str
+    answer: str
+
+
+# ─── MSSQL Connection ────────────────────────────────────────────────────
+
+MSSQL_CONN_STR = os.getenv("MSSQL_CONN_STR")
+
+
+def _get_db_conn():
+    """Return a pyodbc connection to SQL Server."""
+    if not MSSQL_CONN_STR:
+        raise HTTPException(status_code=500, detail="MSSQL_CONN_STR not set in .env")
+    return pyodbc.connect(MSSQL_CONN_STR)
 
 
 # ─── Hashing ─────────────────────────────────────────────────────────────────
@@ -809,6 +828,59 @@ def rag_index_stats():
         "total_documents": len(file_ids),
         "indexed_file_ids": file_ids,
     }
+
+
+# ─── Routes: Chat History (MSSQL) ────────────────────────────────────────
+
+@app.post("/chat/save")
+def save_chat(body: ChatSaveRequest):
+    """Save a question-answer pair to the database."""
+    conn = _get_db_conn()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO chat_history (session_id, question, answer) VALUES (?, ?, ?)",
+            (body.session_id, body.question, body.answer),
+        )
+        conn.commit()
+        return {"message": "Saved", "session_id": body.session_id}
+    finally:
+        conn.close()
+
+
+@app.get("/chat/history/{session_id}")
+def get_chat_history(session_id: str):
+    """Retrieve all Q&A pairs for a session, ordered by time."""
+    conn = _get_db_conn()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT question, answer, timestamp FROM chat_history "
+            "WHERE session_id = ? ORDER BY id ASC",
+            (session_id,),
+        )
+        rows = cursor.fetchall()
+        history = [
+            {"question": r[0], "answer": r[1], "timestamp": r[2].isoformat() if r[2] else None}
+            for r in rows
+        ]
+        return {"session_id": session_id, "history": history}
+    finally:
+        conn.close()
+
+
+@app.delete("/chat/clear/{session_id}")
+def clear_chat_history(session_id: str):
+    """Delete all chat history for a session."""
+    conn = _get_db_conn()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM chat_history WHERE session_id = ?", (session_id,))
+        deleted = cursor.rowcount
+        conn.commit()
+        return {"message": f"Cleared {deleted} messages", "session_id": session_id}
+    finally:
+        conn.close()
 
 
 # ─── Main ────────────────────────────────────────────────────────────────────

@@ -7,6 +7,7 @@ Run: streamlit run streamlit_app_2.py --server.port 8502
 
 import streamlit as st
 import requests
+import uuid
 from datetime import datetime
 
 # ── Page Config ───────────────────────────────────────────────────────────────
@@ -450,9 +451,18 @@ elif page == "RAG Chat":
     # Top-k slider
     top_k = st.slider("Number of context chunks", min_value=1, max_value=20, value=5)
 
-    # Chat history
+    # Session ID — one UUID per browser session, persists across reruns
+    if "session_id" not in st.session_state:
+        st.session_state["session_id"] = str(uuid.uuid4())
+
+    # Chat history — load from DB on first load
     if "chat_history" not in st.session_state:
         st.session_state["chat_history"] = []
+        db_data = api("get", f"/chat/history/{st.session_state['session_id']}")
+        if db_data:
+            for row in db_data.get("history", []):
+                st.session_state["chat_history"].append({"role": "user", "content": row["question"]})
+                st.session_state["chat_history"].append({"role": "assistant", "content": row["answer"]})
     if "followups" not in st.session_state:
         st.session_state["followups"] = []
 
@@ -472,6 +482,12 @@ elif page == "RAG Chat":
                 answer = result.get("answer", "No answer returned.")
                 st.session_state["chat_history"].append({"role": "assistant", "content": answer})
                 st.session_state["followups"] = result.get("followup_questions", [])
+                # Save to DB
+                api("post", "/chat/save", json={
+                    "session_id": st.session_state["session_id"],
+                    "question": fq,
+                    "answer": answer,
+                })
             st.rerun()
 
     # Chat input
@@ -499,6 +515,13 @@ elif page == "RAG Chat":
 
                 st.session_state["chat_history"].append({"role": "assistant", "content": answer})
                 st.session_state["followups"] = result.get("followup_questions", [])
+
+                # Save Q&A pair to DB
+                api("post", "/chat/save", json={
+                    "session_id": st.session_state["session_id"],
+                    "question": query,
+                    "answer": answer,
+                })
                 st.rerun()
             else:
                 st.error("Failed to get a response from the RAG API.")
@@ -506,5 +529,8 @@ elif page == "RAG Chat":
     # Clear chat
     if st.session_state["chat_history"]:
         if st.button("Clear Chat"):
+            api("delete", f"/chat/clear/{st.session_state['session_id']}")
             st.session_state["chat_history"] = []
+            st.session_state["followups"] = []
+            st.session_state["session_id"] = str(uuid.uuid4())
             st.rerun()
