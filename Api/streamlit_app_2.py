@@ -185,6 +185,17 @@ h3 { font-size: 0.95rem !important; font-weight: 600 !important; color: var(--te
     border-radius: var(--radius-lg) !important;
     box-shadow: var(--shadow-sm) !important;
 }
+[data-testid="stChatMessage"] p,
+[data-testid="stChatMessage"] li,
+[data-testid="stChatMessage"] span,
+[data-testid="stChatMessage"] div {
+    color: var(--text) !important;
+}
+/* ── Chat input ── */
+[data-testid="stChatInput"] textarea {
+    color: var(--text) !important;
+    background: var(--bg-2) !important;
+}
 
 /* ── Slider ── */
 .stSlider [data-testid="stThumbValue"] { color: var(--text) !important; }
