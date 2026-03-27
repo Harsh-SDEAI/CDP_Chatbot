@@ -763,10 +763,10 @@ def rag_query(body: RAGQueryRequest):
                 {
                     "role": "system",
                     "content": (
-                        "Based on the user's question and the answer given, suggest exactly 3 short "
-                        "follow-up questions the user might ask next. Each question must be about "
+                        "Based on the user's question and the answer given, suggest exactly 1 short "
+                        "follow-up question the user might ask next. The question must be about "
                         "Cooperstown Dreams Park topics (dining, stays, activities, travel). "
-                        "Return ONLY 3 questions, one per line, no numbering, no bullets."
+                        "Return ONLY 1 question, no numbering, no bullets."
                     ),
                 },
                 {
@@ -776,7 +776,7 @@ def rag_query(body: RAGQueryRequest):
             ],
         )
         raw = followup_resp.choices[0].message.content.strip()
-        followups = [q.strip() for q in raw.split("\n") if q.strip()][:3]
+        followups = [q.strip() for q in raw.split("\n") if q.strip()][:1]
         fu_usage = followup_resp.usage
         if fu_usage:
             input_tokens += fu_usage.prompt_tokens

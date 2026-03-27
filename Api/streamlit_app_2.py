@@ -418,21 +418,18 @@ elif page == "RAG Chat":
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # Follow-up question buttons
+    # Follow-up question button
     if st.session_state["followups"]:
-        st.markdown("**Suggested questions:**")
-        cols = st.columns(len(st.session_state["followups"]))
-        for i, fq in enumerate(st.session_state["followups"]):
-            with cols[i]:
-                if st.button(fq, key=f"fq_{i}", use_container_width=True):
-                    st.session_state["followups"] = []
-                    st.session_state["chat_history"].append({"role": "user", "content": fq})
-                    result = api("post", "/rag/query", json={"query": fq, "top_k": top_k})
-                    if result:
-                        answer = result.get("answer", "No answer returned.")
-                        st.session_state["chat_history"].append({"role": "assistant", "content": answer})
-                        st.session_state["followups"] = result.get("followup_questions", [])
-                    st.rerun()
+        fq = st.session_state["followups"][0]
+        if st.button(f"You might also ask: {fq}", key="fq_0"):
+            st.session_state["followups"] = []
+            st.session_state["chat_history"].append({"role": "user", "content": fq})
+            result = api("post", "/rag/query", json={"query": fq, "top_k": top_k})
+            if result:
+                answer = result.get("answer", "No answer returned.")
+                st.session_state["chat_history"].append({"role": "assistant", "content": answer})
+                st.session_state["followups"] = result.get("followup_questions", [])
+            st.rerun()
 
     # Chat input
     query = st.chat_input("Ask a question about your content...")
