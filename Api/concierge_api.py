@@ -746,6 +746,13 @@ async def check_now():
 
 @app.post("/rag/query")
 def rag_query(body: RAGQueryRequest):
+    # Limit user query to 50 tokens (~40 words)
+    MAX_QUERY_TOKENS = 50
+    query_words = body.query.split()
+    if len(query_words) > MAX_QUERY_TOKENS:
+        body.query = " ".join(query_words[:MAX_QUERY_TOKENS])
+        print(f"[RAG] Query truncated to {MAX_QUERY_TOKENS} tokens")
+
     # Step 1: Use GPT to extract search keywords from user's casual query
     try:
         keyword_resp = ai.chat.completions.create(
@@ -879,7 +886,7 @@ def rag_query(body: RAGQueryRequest):
 
         response = ai.chat.completions.create(
             model="gpt-4o-mini",
-            max_completion_tokens=1500,
+            max_completion_tokens=300,
             temperature=0.3,
             messages=messages,
         )
