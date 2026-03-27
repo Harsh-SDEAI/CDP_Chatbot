@@ -234,8 +234,8 @@ def api(method: str, path: str, **kwargs):
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 
 with st.sidebar:
-    st.markdown("### Concierge")
-    st.caption("Content Monitor & RAG Chat")
+    st.markdown("# Concierge")
+    st.markdown("Content Monitor & RAG Chat")
     st.markdown("---")
 
     page = st.radio("Navigate", ["Monitor", "Files", "RAG Chat"], label_visibility="collapsed")
