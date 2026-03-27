@@ -17,33 +17,33 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Dark Grey Theme CSS ───────────────────────────────────────────────────────
+# ── Light Theme with Navy Sidebar CSS ─────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-    --bg:             #1e1e2e;
-    --bg-2:           #2a2a3c;
-    --surface:        rgba(42,42,60,0.80);
-    --surface-2:      rgba(255,255,255,0.03);
-    --surface-3:      rgba(255,255,255,0.06);
-    --border:         rgba(255,255,255,0.08);
-    --border-2:       rgba(255,255,255,0.12);
-    --border-3:       rgba(255,255,255,0.18);
-    --text:           #e8e8ef;
-    --text-2:         #b0b0c0;
-    --text-3:         #7a7a90;
-    --accent:         #b0b0c0;
-    --green:          #4eca7a;
-    --green-bg:       rgba(78,202,122,0.12);
-    --red:            #f06060;
-    --red-bg:         rgba(240,96,96,0.10);
-    --orange:         #e8a84a;
+    --bg:             #f5f7fa;
+    --bg-2:           #ffffff;
+    --sidebar-bg:     #1a2234;
+    --sidebar-text:   #c8d0dc;
+    --sidebar-active: #2d6cdf;
+    --surface:        #ffffff;
+    --border:         #e2e6ed;
+    --border-2:       #d0d5dd;
+    --text:           #1a1f2e;
+    --text-2:         #5a6274;
+    --text-3:         #8b95a5;
+    --accent:         #2d6cdf;
+    --green:          #12b76a;
+    --green-bg:       rgba(18,183,106,0.10);
+    --red:            #f04438;
+    --red-bg:         rgba(240,68,56,0.08);
+    --orange:         #f79009;
     --radius:         10px;
     --radius-lg:      14px;
-    --shadow-sm:      0 1px 2px rgba(0,0,0,0.20);
-    --shadow:         0 2px 8px rgba(0,0,0,0.30);
+    --shadow-sm:      0 1px 3px rgba(0,0,0,0.06);
+    --shadow:         0 2px 8px rgba(0,0,0,0.08);
 }
 
 html, body, [class*="css"], .stApp, .main {
@@ -60,28 +60,78 @@ html, body, [class*="css"], .stApp, .main {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 8px; }
 
+/* ── Dark Navy Sidebar ── */
 [data-testid="stSidebar"] {
-    background: var(--bg-2) !important;
-    border-right: 1px solid var(--border) !important;
+    background: var(--sidebar-bg) !important;
+    border-right: none !important;
+}
+[data-testid="stSidebar"] * {
+    color: var(--sidebar-text) !important;
 }
 [data-testid="stSidebar"] .stRadio label {
     font-size: 0.88rem !important;
     font-weight: 500 !important;
     padding: 9px 14px !important;
     border-radius: 8px !important;
+    color: var(--sidebar-text) !important;
+}
+[data-testid="stSidebar"] .stRadio label[data-checked="true"],
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:has(input:checked) {
+    background: var(--sidebar-active) !important;
+    color: #ffffff !important;
+}
+[data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3 {
+    color: #ffffff !important;
+}
+[data-testid="stSidebar"] .stTextInput input {
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    color: #ffffff !important;
+}
+[data-testid="stSidebar"] .stButton > button {
+    background: var(--sidebar-active) !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+[data-testid="stSidebar"] hr {
+    border-color: rgba(255,255,255,0.1) !important;
 }
 
-h1 { font-size: 1.5rem !important; font-weight: 700 !important; letter-spacing: -0.03em !important; }
-h2 { font-size: 1.1rem !important; font-weight: 600 !important; }
-h3 { font-size: 0.95rem !important; font-weight: 600 !important; }
+/* ── Main Content ── */
+h1 { font-size: 1.5rem !important; font-weight: 700 !important; letter-spacing: -0.03em !important; color: var(--text) !important; }
+h2 { font-size: 1.1rem !important; font-weight: 600 !important; color: var(--text) !important; }
+h3 { font-size: 0.95rem !important; font-weight: 600 !important; color: var(--text) !important; }
 
 .stButton > button {
     font-family: 'Inter', sans-serif !important;
     font-weight: 600 !important;
     font-size: 0.84rem !important;
     border-radius: 8px !important;
+    border: 1px solid var(--border-2) !important;
+    background: var(--bg-2) !important;
+    color: var(--text) !important;
+}
+.stButton > button[kind="primary"],
+.stButton > button[data-testid="stFormSubmitButton"] {
+    background: var(--accent) !important;
+    color: #ffffff !important;
+    border: none !important;
 }
 
+/* ── Input Fields ── */
+.stTextInput input, .stSelectbox select, .stTextArea textarea {
+    background: var(--bg-2) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+    border-radius: 8px !important;
+}
+.stTextInput input:focus, .stTextArea textarea:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 2px rgba(45,108,223,0.15) !important;
+}
+
+/* ── Status Badges ── */
 .status-badge {
     display: inline-block;
     padding: 2px 10px;
@@ -90,10 +140,11 @@ h3 { font-size: 0.95rem !important; font-weight: 600 !important; }
     font-weight: 600;
 }
 .status-new       { background: var(--green-bg); color: var(--green); }
-.status-unchanged { background: var(--surface-3); color: var(--text-3); }
-.status-updated   { background: rgba(96,165,250,0.15); color: #60a5fa; }
+.status-unchanged { background: #f0f1f3; color: var(--text-3); }
+.status-updated   { background: rgba(45,108,223,0.10); color: var(--accent); }
 .status-error     { background: var(--red-bg); color: var(--red); }
 
+/* ── Monitor Card ── */
 .monitor-card {
     background: var(--bg-2);
     border: 1px solid var(--border);
@@ -102,6 +153,34 @@ h3 { font-size: 0.95rem !important; font-weight: 600 !important; }
     margin-bottom: 0.75rem;
     box-shadow: var(--shadow-sm);
 }
+.monitor-card strong { color: var(--text) !important; }
+.monitor-card span { color: var(--text-3) !important; }
+
+/* ── Metrics ── */
+[data-testid="stMetric"] {
+    background: var(--bg-2) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-lg) !important;
+    padding: 1rem !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+/* ── Chat Messages ── */
+[data-testid="stChatMessage"] {
+    background: var(--bg-2) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+/* ── Slider ── */
+.stSlider [data-testid="stThumbValue"] { color: var(--text) !important; }
+
+/* ── Captions & Info ── */
+.stCaption, [data-testid="stCaption"] { color: var(--text-3) !important; }
+
+/* ── Footer ── */
+footer { visibility: hidden; }
 </style>
 """, unsafe_allow_html=True)
 
