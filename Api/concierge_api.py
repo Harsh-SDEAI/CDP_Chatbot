@@ -84,6 +84,7 @@ class UpdateMonitorRequest(BaseModel):
 class RAGQueryRequest(BaseModel):
     query: str
     top_k: int = 10
+    asked_questions: List[str] = []
 
 class ChatSaveRequest(BaseModel):
     session_id: str
@@ -877,19 +878,24 @@ def rag_query(body: RAGQueryRequest):
 
     # Generate follow-up suggestions
     followups = []
+    avoid = ""
+    if body.asked_questions:
+        avoid = "\n\nALREADY ASKED (never suggest these again):\n" + "\n".join(f"- {q}" for q in body.asked_questions[-10:])
     try:
         followup_resp = ai.chat.completions.create(
             model="gpt-4o-mini",
             max_completion_tokens=150,
-            temperature=0.5,
+            temperature=0.8,
             messages=[
                 {
                     "role": "system",
                     "content": (
-                        "Based on the user's question and the answer given, suggest exactly 1 short "
-                        "follow-up question the user might ask next. The question must be about "
-                        "Cooperstown Dreams Park topics (dining, stays, activities, travel). "
+                        "Suggest exactly 1 NEW follow-up question the user might ask next. "
+                        "Topic must be about Cooperstown Dreams Park (dining, stays, activities, "
+                        "travel, game times, shopping, attractions, camping, breweries, etc). "
+                        "It MUST be different from any already-asked question. Be creative. "
                         "Return ONLY 1 question, no numbering, no bullets."
+                        + avoid
                     ),
                 },
                 {
