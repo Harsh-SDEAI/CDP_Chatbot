@@ -480,7 +480,7 @@ elif page == "RAG Chat":
         if st.button(f"You might also ask: {fq}", key="fq_0"):
             st.session_state["followups"] = []
             st.session_state["chat_history"].append({"role": "user", "content": fq})
-            result = api("post", "/rag/query", json={"query": fq, "top_k": top_k, "asked_questions": asked})
+            result = api("post", "/rag/query", json={"query": fq, "top_k": top_k, "asked_questions": asked, "session_id": st.session_state["session_id"]})
             if result:
                 answer = result.get("answer", "No answer returned.")
                 st.session_state["chat_history"].append({"role": "assistant", "content": answer})
@@ -502,7 +502,7 @@ elif page == "RAG Chat":
 
         with st.chat_message("assistant"):
             with st.spinner("Searching and generating answer..."):
-                result = api("post", "/rag/query", json={"query": query, "top_k": top_k, "asked_questions": asked})
+                result = api("post", "/rag/query", json={"query": query, "top_k": top_k, "asked_questions": asked, "session_id": st.session_state["session_id"]})
 
             if result:
                 answer = result.get("answer", "No answer returned.")
