@@ -471,16 +471,13 @@ elif page == "RAG Chat":
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # Collect all previous user questions to avoid repeat follow-ups
-    prev_questions = [m["content"] for m in st.session_state["chat_history"] if m["role"] == "user"]
-
     # Follow-up question button
     if st.session_state["followups"]:
         fq = st.session_state["followups"][0]
         if st.button(f"You might also ask: {fq}", key="fq_0"):
             st.session_state["followups"] = []
             st.session_state["chat_history"].append({"role": "user", "content": fq})
-            result = api("post", "/rag/query", json={"query": fq, "top_k": top_k, "previous_questions": prev_questions})
+            result = api("post", "/rag/query", json={"query": fq, "top_k": top_k})
             if result:
                 answer = result.get("answer", "No answer returned.")
                 st.session_state["chat_history"].append({"role": "assistant", "content": answer})
@@ -502,7 +499,7 @@ elif page == "RAG Chat":
 
         with st.chat_message("assistant"):
             with st.spinner("Searching and generating answer..."):
-                result = api("post", "/rag/query", json={"query": query, "top_k": top_k, "previous_questions": prev_questions})
+                result = api("post", "/rag/query", json={"query": query, "top_k": top_k})
 
             if result:
                 answer = result.get("answer", "No answer returned.")
