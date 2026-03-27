@@ -410,11 +410,29 @@ elif page == "RAG Chat":
     # Chat history
     if "chat_history" not in st.session_state:
         st.session_state["chat_history"] = []
+    if "followups" not in st.session_state:
+        st.session_state["followups"] = []
 
     # Display chat history
     for msg in st.session_state["chat_history"]:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
+
+    # Follow-up question buttons
+    if st.session_state["followups"]:
+        st.markdown("**Suggested questions:**")
+        cols = st.columns(len(st.session_state["followups"]))
+        for i, fq in enumerate(st.session_state["followups"]):
+            with cols[i]:
+                if st.button(fq, key=f"fq_{i}", use_container_width=True):
+                    st.session_state["followups"] = []
+                    st.session_state["chat_history"].append({"role": "user", "content": fq})
+                    result = api("post", "/rag/query", json={"query": fq, "top_k": top_k})
+                    if result:
+                        answer = result.get("answer", "No answer returned.")
+                        st.session_state["chat_history"].append({"role": "assistant", "content": answer})
+                        st.session_state["followups"] = result.get("followup_questions", [])
+                    st.rerun()
 
     # Chat input
     query = st.chat_input("Ask a question about your content...")
@@ -431,12 +449,17 @@ elif page == "RAG Chat":
                 answer = result.get("answer", "No answer returned.")
                 sources = result.get("sources", [])
                 chunks_used = result.get("chunks_used", 0)
+                token_usage = result.get("token_usage", {})
 
                 st.markdown(answer)
                 if sources:
                     st.caption(f"Sources: {', '.join(sources)} ({chunks_used} chunks used)")
+                if token_usage:
+                    st.caption(f"Tokens — input: {token_usage.get('input_tokens', 0)}, output: {token_usage.get('output_tokens', 0)}, total: {token_usage.get('total_tokens', 0)}")
 
                 st.session_state["chat_history"].append({"role": "assistant", "content": answer})
+                st.session_state["followups"] = result.get("followup_questions", [])
+                st.rerun()
             else:
                 st.error("Failed to get a response from the RAG API.")
 

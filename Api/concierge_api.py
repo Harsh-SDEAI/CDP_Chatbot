@@ -710,7 +710,7 @@ def rag_query(body: RAGQueryRequest):
     try:
         response = ai.chat.completions.create(
             model="gpt-4o-mini",
-            max_completion_tokens=3000,
+            max_completion_tokens=1500,
             temperature=0.3,
             messages=[
                 {
@@ -739,13 +739,65 @@ def rag_query(body: RAGQueryRequest):
         )
 
         answer = response.choices[0].message.content.strip()
+        usage = response.usage
+        input_tokens = usage.prompt_tokens if usage else 0
+        output_tokens = usage.completion_tokens if usage else 0
+        total_tokens = usage.total_tokens if usage else 0
+        print(f"[RAG] Tokens — input: {input_tokens}, output: {output_tokens}, total: {total_tokens}")
     except Exception as e:
         print(f"[RAG] OpenAI API error: {e}")
         answer = ("I'm sorry, I had trouble processing that question. "
                   "Could you try rephrasing it or asking something more specific?")
+        input_tokens = 0
+        output_tokens = 0
+        total_tokens = 0
+
+    # Generate follow-up suggestions
+    followups = []
+    try:
+        followup_resp = ai.chat.completions.create(
+            model="gpt-4o-mini",
+            max_completion_tokens=150,
+            temperature=0.5,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Based on the user's question and the answer given, suggest exactly 3 short "
+                        "follow-up questions the user might ask next. Each question must be about "
+                        "Cooperstown Dreams Park topics (dining, stays, activities, travel). "
+                        "Return ONLY 3 questions, one per line, no numbering, no bullets."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": f"Question: {body.query}\nAnswer: {answer[:500]}",
+                },
+            ],
+        )
+        raw = followup_resp.choices[0].message.content.strip()
+        followups = [q.strip() for q in raw.split("\n") if q.strip()][:3]
+        fu_usage = followup_resp.usage
+        if fu_usage:
+            input_tokens += fu_usage.prompt_tokens
+            output_tokens += fu_usage.completion_tokens
+            total_tokens += fu_usage.total_tokens
+            print(f"[RAG] Follow-up tokens — input: {fu_usage.prompt_tokens}, output: {fu_usage.completion_tokens}")
+    except Exception as e:
+        print(f"[RAG] Follow-up generation failed: {e}")
 
     sources = list({chunk["file_id"] for chunk in chunks})
-    return {"answer": answer, "sources": sources, "chunks_used": len(chunks)}
+    return {
+        "answer": answer,
+        "sources": sources,
+        "chunks_used": len(chunks),
+        "followup_questions": followups,
+        "token_usage": {
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "total_tokens": total_tokens,
+        },
+    }
 
 
 @app.get("/rag/index/stats")
