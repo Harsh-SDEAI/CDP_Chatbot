@@ -164,6 +164,19 @@ h3 { font-size: 0.95rem !important; font-weight: 600 !important; color: var(--te
     padding: 1rem !important;
     box-shadow: var(--shadow-sm) !important;
 }
+[data-testid="stMetric"] label,
+[data-testid="stMetricLabel"] {
+    color: var(--text-2) !important;
+    font-weight: 600 !important;
+}
+[data-testid="stMetric"] [data-testid="stMetricValue"],
+[data-testid="stMetricValue"] {
+    color: var(--text) !important;
+    font-weight: 700 !important;
+}
+
+/* ── Slider label ── */
+.stSlider label, .stSlider p { color: var(--text-2) !important; }
 
 /* ── Chat Messages ── */
 [data-testid="stChatMessage"] {
