@@ -887,8 +887,9 @@ def rag_query(body: RAGQueryRequest):
                     "Cooperstown Dreams Park visitors.\n\n"
 
                     "HOW TO ANSWER:\n"
-                    "- Keep answers within 250 words. Always finish with a complete sentence.\n"
-                    "- Include useful details — times with recommendations, names with descriptions.\n"
+                    "- Keep answers within 200 words. Always finish with a complete sentence.\n"
+                    "- Always pair each item with its detail (e.g., '9:00 AM — explore Otsego Lake after your game'). "
+                    "Never list bare items without context.\n"
                     "- Understand the user's intent, even if the question has typos, slang, or is vague.\n"
                     "- Use ONLY the context provided below. Do not make up any information.\n"
                     "- If the context has anything even slightly related to the question, use it to answer.\n"
