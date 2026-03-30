@@ -809,8 +809,48 @@ def rag_query(body: RAGQueryRequest):
         return {
             "answer": "No documents have been indexed yet. Please scrape some URLs first.",
             "sources": [],
-            "chunks_used": [],
+            "chunks_used": 0,
+            "followup_questions": [],
+            "token_usage": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0},
         }
+
+    # ── Query Classification (NO LLM call) ──────────────────────────────
+    # Check if the query is relevant to the document content.
+    # FAISS score = L2 distance. Lower = better match.
+    # If best score > threshold, query is NOT in context → return fallback.
+    RELEVANCE_THRESHOLD = 1.5
+    best_score = chunks[0].get("score", 0)
+    print(f"[RAG] Best FAISS score: {best_score:.4f} (threshold: {RELEVANCE_THRESHOLD})")
+
+    # Also check for greetings (no LLM needed)
+    greeting_words = {"hi", "hello", "hey", "hii", "hiii", "helo", "greetings", "good morning", "good evening", "good afternoon"}
+    query_lower = body.query.strip().lower()
+    is_greeting = query_lower in greeting_words or query_lower.split()[0] in greeting_words
+
+    if is_greeting:
+        print("[RAG] Greeting detected — no LLM call")
+        return {
+            "answer": "Hello! Welcome to Cooperstown! I'm here to help you with travel, dining, "
+                      "accommodations, activities, and everything about your Cooperstown Dreams Park visit. "
+                      "How can I help?",
+            "sources": [],
+            "chunks_used": 0,
+            "followup_questions": ["What are the game times for the tournament?"],
+            "token_usage": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0},
+        }
+
+    if best_score > RELEVANCE_THRESHOLD:
+        print(f"[RAG] Query NOT relevant (score {best_score:.4f} > {RELEVANCE_THRESHOLD}) — no LLM call")
+        return {
+            "answer": "I'm your Cooperstown Concierge! I can help with travel, dining, accommodations, "
+                      "activities, and everything about your Cooperstown Dreams Park visit. How can I help?",
+            "sources": [],
+            "chunks_used": 0,
+            "followup_questions": ["What dining options are available near Cooperstown Dreams Park?"],
+            "token_usage": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0},
+        }
+
+    # ── Query is relevant — proceed with LLM call ───────────────────────
 
     context_parts = [chunk["text"] for chunk in chunks]
     context = "\n\n---\n\n".join(context_parts)
