@@ -83,7 +83,7 @@ class UpdateMonitorRequest(BaseModel):
 
 class RAGQueryRequest(BaseModel):
     query: str
-    top_k: int = 10
+    top_k: int = 5
     asked_questions: List[str] = []
     session_id: Optional[str] = None
 
@@ -803,7 +803,7 @@ def rag_query(body: RAGQueryRequest):
                 all_chunks.append(chunk)
     # Sort by best score (highest similarity = most relevant for Inner Product) and trim
     all_chunks.sort(key=lambda c: c.get("score", 0), reverse=True)
-    chunks = all_chunks[:max(body.top_k, 10)]
+    chunks = all_chunks[:max(body.top_k, 5)]
 
     if not chunks:
         return {
