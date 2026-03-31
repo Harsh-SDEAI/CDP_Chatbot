@@ -817,6 +817,13 @@ def rag_query(body: RAGQueryRequest):
     all_chunks.sort(key=lambda c: c.get("score", 0), reverse=True)
     chunks = all_chunks[:max(body.top_k, 5)]
 
+    # Print chunks for analysis
+    print(f"\n[RAG] ── Top {len(chunks)} chunks ──")
+    for i, chunk in enumerate(chunks):
+        preview = chunk["text"][:150].replace("\n", " ")
+        print(f"  Chunk {i+1} | Score: {chunk.get('score', 0):.4f} | {preview}...")
+    print(f"[RAG] ────────────────────\n")
+
     if not chunks:
         return {
             "answer": "No documents have been indexed yet. Please scrape some URLs first.",
