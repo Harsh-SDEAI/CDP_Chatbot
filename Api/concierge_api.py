@@ -830,7 +830,7 @@ def rag_query(body: RAGQueryRequest):
     # Check if the query is relevant to the document content.
     # FAISS score = Inner Product (cosine similarity). Higher = better match.
     # If best score < threshold, query is NOT in context → return fallback.
-    RELEVANCE_THRESHOLD = 0.3
+    RELEVANCE_THRESHOLD = 0.2
     best_score = chunks[0].get("score", 0)
     print(f"[RAG] Best FAISS score: {best_score:.4f} (threshold: {RELEVANCE_THRESHOLD})")
 
