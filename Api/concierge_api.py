@@ -49,6 +49,9 @@ STORAGE_DIR.mkdir(exist_ok=True)
 FAISS_DIR = STORAGE_DIR / "faiss"
 FAISS_DIR.mkdir(exist_ok=True)
 
+FAISS_BACKUP_DIR = STORAGE_DIR / "faiss_backup"
+FAISS_BACKUP_DIR.mkdir(exist_ok=True)
+
 MONITOR_PATH = STORAGE_DIR / "monitored_urls.json"
 
 # ── OpenAI client ────────────────────────────────────────────────────────────
@@ -457,6 +460,15 @@ def _rebuild_faiss_if_needed():
     avg_words = sum(len(m["text"].split()) for m in _faiss_meta) / len(_faiss_meta)
     if avg_words > 400:
         print(f"[FAISS] Chunks too large (avg {avg_words:.0f} words). Rebuilding with 300-word chunks...")
+
+        # Backup old index and meta before rebuilding
+        if FAISS_INDEX_PATH.exists():
+            shutil.copy2(FAISS_INDEX_PATH, FAISS_BACKUP_DIR / "index_backup.faiss")
+            print(f"[FAISS] Backed up index → {FAISS_BACKUP_DIR / 'index_backup.faiss'}")
+        if FAISS_META_PATH.exists():
+            shutil.copy2(FAISS_META_PATH, FAISS_BACKUP_DIR / "index_meta_backup.json")
+            print(f"[FAISS] Backed up meta → {FAISS_BACKUP_DIR / 'index_meta_backup.json'}")
+
         _faiss_index = faiss.IndexFlatIP(EMBEDDING_DIM)
         _faiss_meta = []
         _save_faiss()
