@@ -61,7 +61,7 @@ FAISS_INDEX_PATH = FAISS_DIR / "index.faiss"
 FAISS_META_PATH  = FAISS_DIR / "index_meta.json"
 EMBEDDING_DIM    = 1536  # text-embedding-3-small
 
-_faiss_index: Optional[faiss.IndexFlatL2] = None
+_faiss_index: Optional[faiss.IndexFlatIP] = None
 _faiss_meta: List[Dict[str, Any]] = []
 
 # ── Scheduler ────────────────────────────────────────────────────────────────
@@ -243,7 +243,7 @@ def _load_faiss():
         _faiss_meta = json.loads(FAISS_META_PATH.read_text(encoding="utf-8"))
         print(f"[FAISS] Loaded index with {_faiss_index.ntotal} vectors.")
     else:
-        _faiss_index = faiss.IndexFlatL2(EMBEDDING_DIM)
+        _faiss_index = faiss.IndexFlatIP(EMBEDDING_DIM)
         _faiss_meta = []
         print("[FAISS] Created new empty index.")
 
@@ -310,7 +310,7 @@ def remove_document_from_index(file_id: str):
     if len(remaining) == len(_faiss_meta):
         return
 
-    _faiss_index = faiss.IndexFlatL2(EMBEDDING_DIM)
+    _faiss_index = faiss.IndexFlatIP(EMBEDDING_DIM)
     _faiss_meta = []
 
     if remaining:
@@ -457,7 +457,7 @@ def _rebuild_faiss_if_needed():
     avg_words = sum(len(m["text"].split()) for m in _faiss_meta) / len(_faiss_meta)
     if avg_words > 400:
         print(f"[FAISS] Chunks too large (avg {avg_words:.0f} words). Rebuilding with 300-word chunks...")
-        _faiss_index = faiss.IndexFlatL2(EMBEDDING_DIM)
+        _faiss_index = faiss.IndexFlatIP(EMBEDDING_DIM)
         _faiss_meta = []
         _save_faiss()
         for md_path in STORAGE_DIR.glob("*.md"):
@@ -801,8 +801,8 @@ def rag_query(body: RAGQueryRequest):
             if chunk["text"] not in seen_texts:
                 seen_texts.add(chunk["text"])
                 all_chunks.append(chunk)
-    # Sort by best score (lowest distance = most relevant) and trim
-    all_chunks.sort(key=lambda c: c.get("score", 999))
+    # Sort by best score (highest similarity = most relevant for Inner Product) and trim
+    all_chunks.sort(key=lambda c: c.get("score", 0), reverse=True)
     chunks = all_chunks[:max(body.top_k, 10)]
 
     if not chunks:
@@ -816,9 +816,9 @@ def rag_query(body: RAGQueryRequest):
 
     # ── Query Classification (NO LLM call) ──────────────────────────────
     # Check if the query is relevant to the document content.
-    # FAISS score = L2 distance. Lower = better match.
-    # If best score > threshold, query is NOT in context → return fallback.
-    RELEVANCE_THRESHOLD = 1.5
+    # FAISS score = Inner Product (cosine similarity). Higher = better match.
+    # If best score < threshold, query is NOT in context → return fallback.
+    RELEVANCE_THRESHOLD = 0.3
     best_score = chunks[0].get("score", 0)
     print(f"[RAG] Best FAISS score: {best_score:.4f} (threshold: {RELEVANCE_THRESHOLD})")
 
@@ -839,8 +839,8 @@ def rag_query(body: RAGQueryRequest):
             "token_usage": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0},
         }
 
-    if best_score > RELEVANCE_THRESHOLD:
-        print(f"[RAG] Query NOT relevant (score {best_score:.4f} > {RELEVANCE_THRESHOLD}) — no LLM call")
+    if best_score < RELEVANCE_THRESHOLD:
+        print(f"[RAG] Query NOT relevant (score {best_score:.4f} < {RELEVANCE_THRESHOLD}) — no LLM call")
         return {
             "answer": "I'm your Cooperstown Concierge! I can help with travel, dining, accommodations, "
                       "activities, and everything about your Cooperstown Dreams Park visit. How can I help?",
