@@ -94,6 +94,10 @@ class ChatSaveRequest(BaseModel):
     session_id: str
     question: str
     answer: str
+    user_name: Optional[str] = None
+
+class ChatStatusUpdate(BaseModel):
+    status: str  # approved, archived, further_context, rejected
 
 
 # ─── MSSQL Connection ────────────────────────────────────────────────────
@@ -1006,8 +1010,8 @@ def save_chat(body: ChatSaveRequest):
     try:
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO chat_history (session_id, question, answer) VALUES (?, ?, ?)",
-            (body.session_id, body.question, body.answer),
+            "INSERT INTO chat_history (session_id, question, answer, user_name) VALUES (?, ?, ?, ?)",
+            (body.session_id, body.question, body.answer, body.user_name or "Anonymous"),
         )
         conn.commit()
         return {"message": "Saved", "session_id": body.session_id}
@@ -1046,6 +1050,178 @@ def clear_chat_history(session_id: str):
         deleted = cursor.rowcount
         conn.commit()
         return {"message": f"Cleared {deleted} messages", "session_id": session_id}
+    finally:
+        conn.close()
+
+
+# ─── Routes: QA Review & Conversation History ──────────────────────────────
+
+@app.get("/chat/all")
+def get_all_chats(
+    search: Optional[str] = None,
+    user_name: Optional[str] = None,
+    status: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 50,
+):
+    """Retrieve all Q&A pairs with optional filters for conversation history."""
+    conn = _get_db_conn()
+    try:
+        cursor = conn.cursor()
+        conditions = []
+        params = []
+
+        if search:
+            conditions.append("(question LIKE ? OR answer LIKE ?)")
+            params.extend([f"%{search}%", f"%{search}%"])
+        if user_name:
+            conditions.append("user_name = ?")
+            params.append(user_name)
+        if status:
+            conditions.append("status = ?")
+            params.append(status)
+        if start_date:
+            conditions.append("timestamp >= ?")
+            params.append(start_date)
+        if end_date:
+            conditions.append("timestamp <= ?")
+            params.append(end_date + " 23:59:59")
+
+        where = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+        # Get total count
+        cursor.execute(f"SELECT COUNT(*) FROM chat_history {where}", params)
+        total = cursor.fetchone()[0]
+
+        # Get paginated results
+        offset = (page - 1) * page_size
+        cursor.execute(
+            f"SELECT id, session_id, question, answer, user_name, status, timestamp "
+            f"FROM chat_history {where} "
+            f"ORDER BY timestamp DESC "
+            f"OFFSET ? ROWS FETCH NEXT ? ROWS ONLY",
+            params + [offset, page_size],
+        )
+        rows = cursor.fetchall()
+        results = [
+            {
+                "id": r[0],
+                "session_id": r[1],
+                "question": r[2],
+                "answer": r[3],
+                "user_name": r[4] or "Anonymous",
+                "status": r[5] or "pending",
+                "timestamp": r[6].isoformat() if r[6] else None,
+            }
+            for r in rows
+        ]
+        return {"total": total, "page": page, "page_size": page_size, "results": results}
+    finally:
+        conn.close()
+
+
+@app.put("/chat/{chat_id}/status")
+def update_chat_status(chat_id: int, body: ChatStatusUpdate):
+    """Update the review status of a Q&A pair."""
+    valid_statuses = {"pending", "approved", "archived", "further_context", "rejected"}
+    if body.status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
+    conn = _get_db_conn()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE chat_history SET status = ? WHERE id = ?",
+            (body.status, chat_id),
+        )
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Chat record not found")
+        conn.commit()
+        return {"message": "Status updated", "id": chat_id, "status": body.status}
+    finally:
+        conn.close()
+
+
+@app.get("/chat/users")
+def get_chat_users():
+    """Get list of unique user names from chat history."""
+    conn = _get_db_conn()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT DISTINCT user_name FROM chat_history WHERE user_name IS NOT NULL ORDER BY user_name"
+        )
+        users = [r[0] for r in cursor.fetchall()]
+        return {"users": users}
+    finally:
+        conn.close()
+
+
+@app.get("/chat/review")
+def get_chats_for_review(
+    user_name: Optional[str] = None,
+    status: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 20,
+):
+    """Get Q&A pairs for review, ordered by most recent first."""
+    conn = _get_db_conn()
+    try:
+        cursor = conn.cursor()
+        conditions = []
+        params = []
+
+        if user_name:
+            conditions.append("user_name = ?")
+            params.append(user_name)
+        if status:
+            conditions.append("status = ?")
+            params.append(status)
+
+        where = "WHERE " + " AND ".join(conditions) if conditions else ""
+        offset = (page - 1) * page_size
+
+        cursor.execute(
+            f"SELECT id, session_id, question, answer, user_name, status, timestamp "
+            f"FROM chat_history {where} "
+            f"ORDER BY timestamp DESC "
+            f"OFFSET ? ROWS FETCH NEXT ? ROWS ONLY",
+            params + [offset, page_size],
+        )
+        rows = cursor.fetchall()
+        results = [
+            {
+                "id": r[0],
+                "session_id": r[1],
+                "question": r[2],
+                "answer": r[3],
+                "user_name": r[4] or "Anonymous",
+                "status": r[5] or "pending",
+                "timestamp": r[6].isoformat() if r[6] else None,
+            }
+            for r in rows
+        ]
+
+        cursor.execute(f"SELECT COUNT(*) FROM chat_history {where}", params)
+        total = cursor.fetchone()[0]
+
+        return {"total": total, "page": page, "page_size": page_size, "results": results}
+    finally:
+        conn.close()
+
+
+@app.delete("/chat/{chat_id}")
+def delete_chat_record(chat_id: int):
+    """Delete a single chat record by ID."""
+    conn = _get_db_conn()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM chat_history WHERE id = ?", (chat_id,))
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Chat record not found")
+        conn.commit()
+        return {"message": "Deleted", "id": chat_id}
     finally:
         conn.close()
 

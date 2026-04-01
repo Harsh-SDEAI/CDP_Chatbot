@@ -64,6 +64,8 @@ def run_migration():
                     session_id VARCHAR(36) NOT NULL,
                     question NVARCHAR(MAX) NOT NULL,
                     answer NVARCHAR(MAX) NOT NULL,
+                    status VARCHAR(50) DEFAULT 'pending',
+                    user_name NVARCHAR(255) DEFAULT 'Anonymous',
                     timestamp DATETIME DEFAULT GETDATE()
                 )
             """)
@@ -74,6 +76,23 @@ def run_migration():
             print("       Table chat_history created with index.")
         else:
             print("       Table chat_history already exists. Skipping.")
+
+        # Add new columns if they don't exist (for existing tables)
+        for col_name, col_def in [
+            ("status", "VARCHAR(50) DEFAULT 'pending'"),
+            ("user_name", "NVARCHAR(255) DEFAULT 'Anonymous'"),
+        ]:
+            cursor.execute(
+                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS "
+                "WHERE TABLE_NAME = 'chat_history' AND COLUMN_NAME = ?",
+                (col_name,),
+            )
+            if cursor.fetchone() is None:
+                cursor.execute(f"ALTER TABLE chat_history ADD {col_name} {col_def}")
+                conn.commit()
+                print(f"       Added column '{col_name}' to chat_history.")
+            else:
+                print(f"       Column '{col_name}' already exists. Skipping.")
 
         conn.close()
     except Exception as e:
