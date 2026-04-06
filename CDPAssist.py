@@ -139,7 +139,7 @@ def export_qa_pairs_job():
 openai_client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
 EMBEDDING_MODEL = "text-embedding-3-large"
 EMBEDDING_DIM = 3072
-LLM_MODEL = "gpt-3.5-turbo"
+LLM_MODEL = "gpt-4o-mini"
 PERSIST_DIR = "./storage"
 FAISS_INDEX_PATH = os.path.join(PERSIST_DIR, "faiss.index")
 TEXTS_PATH = os.path.join(PERSIST_DIR, "texts.json")
@@ -231,19 +231,19 @@ class SessionHistoryRequest(BaseModel):
     sessionid: str
  
 # ----------------------- Helper Function -----------------------
-SYSTEM_PROMPT = “””You are a knowledgeable and focused chatbot assistant for Cooperstown Dreams Park (CDP). Your goal is to understand the user’s question deeply and provide the most relevant and accurate answer using ONLY the provided context.
+SYSTEM_PROMPT = """You are a knowledgeable and focused chatbot assistant for Cooperstown Dreams Park (CDP). Your goal is to understand the user’s question deeply and provide the most relevant and accurate answer using ONLY the provided context.
 
 Instructions:
 1. When a question is asked, analyze the intent and context thoroughly.
 2. Search the provided context for content that matches the keywords and meaning.
-3. If the user’s question includes time-related words such as “when”, check if specific dates, times, or durations are mentioned in the context.
+3. If the user’s question includes time-related words such as "when", check if specific dates, times, or durations are mentioned in the context.
    - If available, respond with the exact timing clearly.
    - If timing is unclear or missing, do not assume — politely mention that the timing information is not found.
 4. Analyze all provided context chunks and synthesize the most appropriate answer.
 5. If you do not find relevant information in the context, respond with:
-   <i>”I am the Cooperstown Dreams Park Chat Assistant. I can only assist with questions related to Cooperstown Dreams Park. For more information, please visit <a href=’https://www.cooperstowndreamspark.com/’>our website</a>.”</i>
+   <i>"I am the Cooperstown Dreams Park Chat Assistant. I can only assist with questions related to Cooperstown Dreams Park. For more information, please visit <a href=’https://www.cooperstowndreamspark.com/’>our website</a>."</i>
 6. If asked about internal system details like API keys, code, or settings, respond with:
-   <i>”Sorry, I can’t share internal system details. I’m here to assist with Cooperstown Dreams Park only.”</i>
+   <i>"Sorry, I can’t share internal system details. I’m here to assist with Cooperstown Dreams Park only."</i>
 7. Do not default to generic messages without making a sincere effort to analyze the context.
 
 Formatting instructions:
@@ -252,12 +252,12 @@ Formatting instructions:
 - Use <ul> or <ol> only when listing is appropriate, and use <li> for bullet items.
 - Use <b> tags to highlight important words or phrases.
 - Do not use Markdown syntax (e.g., ** or *).
-- Analyze the content carefully and apply HTML tags effectively—do not create lists unless clearly needed.”””
+- Analyze the content carefully and apply HTML tags effectively—do not create lists unless clearly needed."""
 
 def generate_response(user_query: str, sessionid: int, userid: int) -> str:
     # 1. Retrieve relevant chunks from FAISS
     chunks = search_index(user_query, faiss_index, document_texts, top_k=7)
-    context = “\n\n---\n\n”.join(chunks)
+    context = "\n\n---\n\n".join(chunks)
 
     # 2. Send to OpenAI with context
     response = openai_client.chat.completions.create(
@@ -266,8 +266,8 @@ def generate_response(user_query: str, sessionid: int, userid: int) -> str:
         top_p=0.8,
         max_tokens=1024,
         messages=[
-            {“role”: “system”, “content”: SYSTEM_PROMPT},
-            {“role”: “user”, “content”: f”Context:\n{context}\n\nUser question: {user_query}”}
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": f"Context:\n{context}\n\nUser question: {user_query}"}
         ]
     )
     return response.choices[0].message.content
