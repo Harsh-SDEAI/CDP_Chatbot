@@ -1,0 +1,131 @@
+Cooperstown dreams park organizes 16 tournament a year following is the list of 16 tournament with all details.
+
+
+Tournament Year: 2025
+Tournament ID: 337
+Tournament Number: 1
+Week Date: May 25
+Start Date: 2025-05-25
+End Date: 2025-05-31
+Month: May
+-----------------------------
+Tournament Year: 2025
+Tournament ID: 338
+Tournament Number: 2
+Week Date: May 31
+Start Date: 2025-05-31
+End Date: 2025-06-06
+Month: February
+-----------------------------
+Tournament Year: 2025
+Tournament ID: 339
+Tournament Number: 3
+Week Date: Jun 06
+Start Date: 2025-06-06
+End Date: 2025-06-12
+Month: June
+-----------------------------
+Tournament Year: 2025
+Tournament ID: 340
+Tournament Number: 4
+Week Date: Jun 12
+Start Date: 2025-06-12
+End Date: 2025-06-18
+Month: June
+-----------------------------
+Tournament Year: 2025
+Tournament ID: 341
+Tournament Number: 5
+Week Date: Jun 18
+Start Date: 2025-06-18
+End Date: 2025-06-24
+Month: June
+-----------------------------
+Tournament Year: 2025
+Tournament ID: 342
+Tournament Number: 6
+Week Date: Jun 24
+Start Date: 2025-06-24
+End Date: 2025-06-30
+Month: June
+-----------------------------
+Tournament Year: 2025
+Tournament ID: 343
+Tournament Number: 7
+Week Date: Jun 30
+Start Date: 2025-06-30
+End Date: 2025-07-06
+Month: June
+-----------------------------
+Tournament Year: 2025
+Tournament ID: 344
+Tournament Number: 8
+Week Date: Jul 06
+Start Date: 2025-07-06
+End Date: 2025-07-12
+Month: July
+-----------------------------
+Tournament Year: 2025
+Tournament ID: 345
+Tournament Number: 9
+Week Date: Jul 12
+Start Date: 2025-07-12
+End Date: 2025-07-18
+Month: July
+-----------------------------
+Tournament Year: 2025
+Tournament ID: 346
+Tournament Number: 10
+Week Date: Jul 18
+Start Date: 2025-07-18
+End Date: 2025-07-24
+Month: July
+-----------------------------
+Tournament Year: 2025
+Tournament ID: 347
+Tournament Number: 11
+Week Date: Jul 24
+Start Date: 2025-07-24
+End Date: 2025-07-30
+Month: July
+-----------------------------
+Tournament Year: 2025
+Tournament ID: 348
+Tournament Number: 12
+Week Date: Jul 30
+Start Date: 2025-07-30
+End Date: 2025-08-05
+Month: July
+-----------------------------
+Tournament Year: 2025
+Tournament ID: 349
+Tournament Number: 13
+Week Date: Aug 05
+Start Date: 2025-08-05
+End Date: 2025-08-11
+Month: August
+-----------------------------
+Tournament Year: 2025
+Tournament ID: 350
+Tournament Number: 14
+Week Date: Aug 11
+Start Date: 2025-08-11
+End Date: 2025-08-17
+Month: August
+-----------------------------
+Tournament Year: 2025
+Tournament ID: 351
+Tournament Number: 15
+Week Date: Aug 17
+Start Date: 2025-08-17
+End Date: 2025-08-23
+Month: August
+-----------------------------
+Tournament Year: 2025
+Tournament ID: 352
+Tournament Number: 16
+Week Date: Aug 23
+Start Date: 2025-08-23
+End Date: 2025-08-29
+Month: August
+-----------------------------
