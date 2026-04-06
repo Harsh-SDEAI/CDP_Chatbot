@@ -145,13 +145,27 @@ FAISS_INDEX_PATH = os.path.join(PERSIST_DIR, "faiss.index")
 TEXTS_PATH = os.path.join(PERSIST_DIR, "texts.json")
 
 # ----------------------- FAISS Helpers -----------------------
+CHUNK_SIZE = 2000   # characters per chunk (~500 tokens)
+CHUNK_OVERLAP = 200 # overlap between consecutive chunks
+
+def chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list[str]:
+    """Split text into overlapping chunks by character count."""
+    chunks = []
+    start = 0
+    while start < len(text):
+        end = start + chunk_size
+        chunks.append(text[start:end])
+        start += chunk_size - overlap
+    return chunks
+
 def load_text_files(folder: str) -> list[str]:
-    """Read all .txt files from a folder, one string per file."""
+    """Read all .txt files from a folder, chunk them, return list of chunks."""
     texts = []
     for fname in sorted(os.listdir(folder)):
         if fname.endswith(".txt"):
             with open(os.path.join(folder, fname), "r", encoding="utf-8") as f:
-                texts.append(f.read())
+                content = f.read()
+            texts.extend(chunk_text(content))
     return texts
 
 def embed_texts(texts: list[str]) -> np.ndarray:
