@@ -212,7 +212,8 @@ else:
     document_texts = load_text_files(text_folder)
     if not document_texts:
         raise Exception("No documents found in the specified folder.")
-    print(f"Loaded {len(document_texts)} documents.")
+    file_count = len([f for f in os.listdir(text_folder) if f.endswith(".txt")])
+    print(f"Loaded {file_count} files → {len(document_texts)} chunks.")
     faiss_index, document_texts = build_and_persist_index(document_texts)
     print("Created and saved new FAISS index.")
 
@@ -337,11 +338,11 @@ def build_faiss_index():
         if not texts:
             raise HTTPException(status_code=404, detail="No documents found in the specified folder.")
 
-        print(f"Loaded {len(texts)} documents from {settings.TEXT_FOLDER}")
+        file_count = len([f for f in os.listdir(settings.TEXT_FOLDER) if f.endswith(".txt")])
+        print(f"Loaded {file_count} files → {len(texts)} chunks from {settings.TEXT_FOLDER}")
         faiss_index, document_texts = build_and_persist_index(texts)
-        print("Created and saved new FAISS index to ./storage")
         print("New FAISS index is ready for queries.")
-        return {"status": "ok", "documents_indexed": len(texts)}
+        return {"status": "ok", "files_loaded": file_count, "chunks_indexed": len(texts)}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to build FAISS index: {str(e)}")
