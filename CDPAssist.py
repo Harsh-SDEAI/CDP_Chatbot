@@ -247,6 +247,13 @@ class ChatRequest(BaseModel):
     query: str
     userid: int
     sessionid: str
+
+class ChatHistoryRequest(BaseModel):
+    userid: int
+
+class SessionHistoryRequest(BaseModel):
+    userid: int
+    sessionid: str
  
 # ----------------------- Helper Function -----------------------
 def generate_response(user_query: str, sessionid: int, userid: int) -> str:
@@ -379,27 +386,75 @@ def build_faiss_index():
         raise HTTPException(status_code=500, detail=f"Failed to build FAISS index: {str(e)}")
     
 
-@app.get("/history")
-def get_history():
+@app.post("/ChatHistory")
+def get_chat_history(request: ChatHistoryRequest, api_key: str = Depends(verify_api_key)):
     try:
         db = get_db_connection()
         cursor = db.cursor()
-        cursor.execute("SELECT SessionId, UserRegistraionId, Question, Answer, TimeStamp FROM CDPChatHistory ORDER BY id DESC")
+        cursor.execute("""
+            SELECT
+                ch.SessionId,
+                ch.LastTimestamp,
+                (
+                    SELECT TOP 1 LEFT(sub.Question, 35)
+                    FROM CDPChatHistory sub
+                    WHERE sub.SessionId = ch.SessionId
+                      AND sub.UserRegistrationId = ?
+                    ORDER BY sub.id ASC
+                ) AS ChatTitle
+            FROM (
+                SELECT SessionId, MAX(id) AS LatestId, MAX(TimeStamp) AS LastTimestamp
+                FROM CDPChatHistory
+                WHERE UserRegistrationId = ?
+                GROUP BY SessionId
+            ) ch
+            ORDER BY ch.LatestId DESC
+        """, (request.userid, request.userid))
         rows = cursor.fetchall()
-        # rows now contains tuples of 5 items: (SessionId, UserRegistraionId, Question, Answer, TimeStamp)
-        history = []
+        sessions = []
         for row in rows:
-            history.append({
+            sessions.append({
                 "session_id": row[0],
-                "user_registration_id": row[1],
-                "question": row[2],
-                "answer": row[3],
-                "timestamp": row[4]
+                "last_activity": str(row[1]) if row[1] else None,
+                "chat_title": row[2] or ""
             })
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database query error: {e}")
     finally:
         db.close()
 
-    return {"conversation_history": history}
+    return {"userid": request.userid, "sessions": sessions}
+
+
+@app.post("/SessionHistory")
+def get_session_history(request: SessionHistoryRequest, api_key: str = Depends(verify_api_key)):
+    try:
+        db = get_db_connection()
+        cursor = db.cursor()
+        cursor.execute("""
+            SELECT Question, Answer, TimeStamp
+            FROM CDPChatHistory
+            WHERE UserRegistrationId = ? AND SessionId = ?
+            ORDER BY id ASC
+        """, (request.userid, request.sessionid))
+        rows = cursor.fetchall()
+        messages = []
+        for row in rows:
+            messages.append({
+                "question": row[0],
+                "answer": row[1],
+                "timestamp": str(row[2]) if row[2] else None
+            })
+        chat_title = messages[0]["question"][:35] if messages else ""
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database query error: {e}")
+    finally:
+        db.close()
+
+    return {
+        "userid": request.userid,
+        "session_id": request.sessionid,
+        "chat_title": chat_title,
+        "messages": messages
+    }
 
