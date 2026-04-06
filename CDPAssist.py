@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, Header
 import re
+import json
 from pydantic import BaseModel
 import faiss
 import os
@@ -7,16 +8,9 @@ import time
 import httpx
 import pyodbc
 import numpy as np
+import openai
 import settings
 from fastapi.middleware.cors import CORSMiddleware
-
-# LlamaIndex imports (adjust these if your package structure differs)
-from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, StorageContext, load_index_from_storage, Settings
-from llama_index.vector_stores.faiss import FaissVectorStore
-from llama_index.core.llms import ChatMessage, MessageRole
-from llama_index.llms.openai import OpenAI
-from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.core.node_parser import SentenceSplitter
 
 # Database Credentials
 SERVER_NAME = settings.DB_SERVER
@@ -141,118 +135,72 @@ def export_qa_pairs_job():
     current_file.close()
     conn.close()
     return {"status": "ok", "files": sorted(list(created_files))}
-# ----------------------- Document and FAISS Setup -----------------------
-# Load documents from a directory (update path as needed)
+# ----------------------- OpenAI Client -----------------------
+openai_client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+EMBEDDING_MODEL = "text-embedding-3-large"
+EMBEDDING_DIM = 3072
+LLM_MODEL = "gpt-3.5-turbo"
+PERSIST_DIR = "./storage"
+FAISS_INDEX_PATH = os.path.join(PERSIST_DIR, "faiss.index")
+TEXTS_PATH = os.path.join(PERSIST_DIR, "texts.json")
+
+# ----------------------- FAISS Helpers -----------------------
+def load_text_files(folder: str) -> list[str]:
+    """Read all .txt files from a folder, one string per file."""
+    texts = []
+    for fname in sorted(os.listdir(folder)):
+        if fname.endswith(".txt"):
+            with open(os.path.join(folder, fname), "r", encoding="utf-8") as f:
+                texts.append(f.read())
+    return texts
+
+def embed_texts(texts: list[str]) -> np.ndarray:
+    """Embed a list of texts using OpenAI embeddings API. Handles batching."""
+    all_embeddings = []
+    batch_size = 100
+    for i in range(0, len(texts), batch_size):
+        batch = texts[i:i + batch_size]
+        resp = openai_client.embeddings.create(model=EMBEDDING_MODEL, input=batch)
+        all_embeddings.extend([e.embedding for e in resp.data])
+    return np.array(all_embeddings, dtype=np.float32)
+
+def build_and_persist_index(texts: list[str]) -> tuple[faiss.Index, list[str]]:
+    """Build a FAISS index from texts, persist index + texts to disk."""
+    vectors = embed_texts(texts)
+    idx = faiss.IndexFlatL2(EMBEDDING_DIM)
+    idx.add(vectors)
+    os.makedirs(PERSIST_DIR, exist_ok=True)
+    faiss.write_index(idx, FAISS_INDEX_PATH)
+    with open(TEXTS_PATH, "w", encoding="utf-8") as f:
+        json.dump(texts, f)
+    return idx, texts
+
+def load_index_and_texts() -> tuple[faiss.Index, list[str]]:
+    """Load FAISS index and texts from disk."""
+    idx = faiss.read_index(FAISS_INDEX_PATH)
+    with open(TEXTS_PATH, "r", encoding="utf-8") as f:
+        texts = json.load(f)
+    return idx, texts
+
+def search_index(query: str, idx: faiss.Index, texts: list[str], top_k: int = 7) -> list[str]:
+    """Embed query, search FAISS, return top_k text chunks."""
+    q_vec = embed_texts([query])
+    _, I = idx.search(q_vec, top_k)
+    return [texts[i] for i in I[0] if i < len(texts)]
+
+# ----------------------- Load or Build Index at Startup -----------------------
 text_folder = settings.TEXT_FOLDER
 
-# Initialize embedding model
-
-
-
-# Set up FAISS index and LlamaIndex
-
-# vector_store_path = os.path.join(persist_dir, "faiss.index")
-# Build the index from documents 
-# def load_faiss_index(persist_dir: str = "./storage"):
-#     if not os.path.exists(persist_dir):
-#         raise FileNotFoundError(f"Persist directory '{persist_dir}' does not exist.")
-
-#     vector_store = FaissVectorStore.from_persist_dir(persist_dir)
-#     storage_context = StorageContext.from_defaults(vector_store=vector_store, persist_dir=persist_dir)
-#     index = load_index_from_storage(storage_context=storage_context)
-#     print("Loaded FAISS index from local storage.")
-#     return index
-
-# if os.path.exists(persist_dir):
-#     vector_store = FaissVectorStore.from_persist_dir("./storage")
-#     storage_context = StorageContext.from_defaults(vector_store=vector_store, persist_dir=persist_dir)
-#     index = load_index_from_storage(storage_context=storage_context)
-#     print("Loaded FAISS index from Local machine.")
-# else: 
-#     documents = SimpleDirectoryReader(text_folder).load_data()
-#     if not documents: 
-#         raise Exception("No documents found in the specified folder.")
-#     print(f"Loaded {len(documents)} documents.")
-
-#     # Use if want to utilize chunking mechanism
-#     # chunk_size = 2000
-#     # chunk_overlap = 100
-#     # parser = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-#     # nodes = parser.get_nodes_from_documents(documents)
-
-#     embedding_dim = 3072
-#     faiss_index = faiss.IndexFlatL2(embedding_dim)
-#     vector_store = FaissVectorStore(faiss_index=faiss_index)
-#     storage_context = StorageContext.from_defaults(vector_store=vector_store)
-#     index = VectorStoreIndex.from_documents(documents, storage_context=storage_context, embed_model=embed_model)
-#     #index = VectorStoreIndex(nodes, storage_context=storage_context, embed_model=embed_model)
-#     index.storage_context.persist()
-#     print("Created and saved new FAISS index.")
-
- 
-
-# ----------------------- OpenAI LLM and Query Engine -----------------------
-Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-large", api_key=settings.OPENAI_API_KEY)
-openai_llm = OpenAI(
-    api_key=settings.OPENAI_API_KEY,  
-    model_name="gpt-3.5-turbo",
-    temperature=0.1,
-    top_p=0.8,
-    max_tokens=1024
-)
-persist_dir = "./storage"
-if os.path.exists(persist_dir):
-    vector_store = FaissVectorStore.from_persist_dir(persist_dir)
-    storage_context = StorageContext.from_defaults(vector_store=vector_store, persist_dir=persist_dir)
-    index = load_index_from_storage(storage_context=storage_context)
+if os.path.exists(FAISS_INDEX_PATH) and os.path.exists(TEXTS_PATH):
+    faiss_index, document_texts = load_index_and_texts()
     print("Loaded FAISS index from Local machine.")
 else:
-    documents = SimpleDirectoryReader(text_folder).load_data()
-    if not documents:
+    document_texts = load_text_files(text_folder)
+    if not document_texts:
         raise Exception("No documents found in the specified folder.")
-    print(f"Loaded {len(documents)} documents.")
-    embedding_dim = 3072
-    faiss_index = faiss.IndexFlatL2(embedding_dim)
-    vector_store = FaissVectorStore(faiss_index=faiss_index)
-    storage_context = StorageContext.from_defaults(vector_store=vector_store)
-    index = VectorStoreIndex.from_documents(documents, storage_context=storage_context, embed_model=Settings.embed_model)
-    index.storage_context.persist()
+    print(f"Loaded {len(document_texts)} documents.")
+    faiss_index, document_texts = build_and_persist_index(document_texts)
     print("Created and saved new FAISS index.")
-query_engine = index.as_query_engine(llm=openai_llm, similarity_top_k=7)
-
-
-# def get_user_conversation_history_from_db(user_id: int, session_id: str, limit: int = None):
-#     if limit == 0:
-#         return []
-
-#     user_history = []
-#     db = get_db_connection()
-#     try: 
-#         cursor = db.cursor()
-#         query = (
-#             "SELECT TOP (?) Question, Answer FROM CDPChatHistory "
-#             "WHERE UserRegistrationId = ? AND SessionId = ? "
-#             "ORDER BY CreatedOn DESC"
-# )
-#         cursor.execute(query, (limit, user_id, session_id))
-
-#         rows = cursor.fetchall()
-#         if not rows:
-#             return []
-
-#         # Reverse to get ascending chronological order
-#         for row in reversed(rows): 
-#             question = row[0]
-#             answer = row[1]
-#             user_history.append(ChatMessage(role=MessageRole.USER, content=question))
-#             user_history.append(ChatMessage(role=MessageRole.ASSISTANT, content=answer))
-
-#     except Exception as e:
-#         print("Error retrieving user conversation history:", e)
-#     finally:
-#         db.close()
-
-#     return user_history
 
 
 # ----------------------- Request Model -----------------------
@@ -269,39 +217,46 @@ class SessionHistoryRequest(BaseModel):
     sessionid: str
  
 # ----------------------- Helper Function -----------------------
-def generate_response(user_query: str, sessionid: int, userid: int) -> str:
-    # Retrieve user-specific conversation history 
-    # user_history = get_user_conversation_history_from_db(userid, sessionid, limit=settings.USER_LIMIT)  
-    # formatted_history = ""
-    # for msg in user_history:
-    #     role = "User" if msg.role == MessageRole.USER else "Assistant"
-    #     formatted_history += f"{role}: {msg.content}\n"
-    user_query =f'''You are a knowledgeable and focused chatbot assistant for Cooperstown Dreams Park (CDP). Your goal is to understand the user's question deeply and retrieve the most relevant and accurate information from the provided knowledge base.
-                    User query: {user_query}
-                    Instructions: 
+SYSTEM_PROMPT = “””You are a knowledgeable and focused chatbot assistant for Cooperstown Dreams Park (CDP). Your goal is to understand the user’s question deeply and provide the most relevant and accurate answer using ONLY the provided context.
 
-                    1. When a question is asked, analyze the intent and context thoroughly.
-                    2. Search the knowledge base for content that matches the keywords and context.
-                    3. If the user's question includes time-related words such as <b>“when”</b>, check if specific dates, times, or durations are mentioned in the knowledge base.  
-                    - If available, respond with the exact timing clearly.  
-                    - If timing is unclear or missing, do not assume — politely mention that the timing information is not found.
-                    4. If relevant nodes are found, analyze all of them and synthesize the most appropriate answer from them.
-                    5. If you do not find relevant information, rephrase or interpret the user’s question to improve the match and retry the search.
-                    6. Only if you are confident (95% or higher) that no relevant content exists, respond with:  
-                    <i>"I am the Cooperstown Dreams Park Chat Assistant. I can only assist with questions related to Cooperstown Dreams Park. For more information, please visit <a href='https://www.cooperstowndreamspark.com/'>our website</a>."</i>
-                    7. If asked about internal system details like API keys, code, or settings, respond with:  
-                    <i>"Sorry, I can't share internal system details. I’m here to assist with Cooperstown Dreams Park only."</i>
-                    8. Do not default to generic messages without making a sincere effort to analyze, rephrase, and search for relevant answers. 
-                    <b>Formatting instructions:</b>  
-                    - Format all answers in clean and valid HTML.  
-                    - Use <h4> or <h5> tags for section headings.  
-                    - Use <ul> or <ol> only when listing is appropriate, and use <li> for bullet items.  
-                    - Use <b> tags to highlight important words or phrases.  
-                    - Do not use Markdown syntax (e.g., ** or *).  
-                    - Analyze the content carefully and apply HTML tags effectively—do not create lists unless clearly needed.'''
-    retrieved_response = query_engine.query(user_query)
-    retrieved_text = str(retrieved_response)
-    return retrieved_text 
+Instructions:
+1. When a question is asked, analyze the intent and context thoroughly.
+2. Search the provided context for content that matches the keywords and meaning.
+3. If the user’s question includes time-related words such as “when”, check if specific dates, times, or durations are mentioned in the context.
+   - If available, respond with the exact timing clearly.
+   - If timing is unclear or missing, do not assume — politely mention that the timing information is not found.
+4. Analyze all provided context chunks and synthesize the most appropriate answer.
+5. If you do not find relevant information in the context, respond with:
+   <i>”I am the Cooperstown Dreams Park Chat Assistant. I can only assist with questions related to Cooperstown Dreams Park. For more information, please visit <a href=’https://www.cooperstowndreamspark.com/’>our website</a>.”</i>
+6. If asked about internal system details like API keys, code, or settings, respond with:
+   <i>”Sorry, I can’t share internal system details. I’m here to assist with Cooperstown Dreams Park only.”</i>
+7. Do not default to generic messages without making a sincere effort to analyze the context.
+
+Formatting instructions:
+- Format all answers in clean and valid HTML.
+- Use <h4> or <h5> tags for section headings.
+- Use <ul> or <ol> only when listing is appropriate, and use <li> for bullet items.
+- Use <b> tags to highlight important words or phrases.
+- Do not use Markdown syntax (e.g., ** or *).
+- Analyze the content carefully and apply HTML tags effectively—do not create lists unless clearly needed.”””
+
+def generate_response(user_query: str, sessionid: int, userid: int) -> str:
+    # 1. Retrieve relevant chunks from FAISS
+    chunks = search_index(user_query, faiss_index, document_texts, top_k=7)
+    context = “\n\n---\n\n”.join(chunks)
+
+    # 2. Send to OpenAI with context
+    response = openai_client.chat.completions.create(
+        model=LLM_MODEL,
+        temperature=0.1,
+        top_p=0.8,
+        max_tokens=1024,
+        messages=[
+            {“role”: “system”, “content”: SYSTEM_PROMPT},
+            {“role”: “user”, “content”: f”Context:\n{context}\n\nUser question: {user_query}”}
+        ]
+    )
+    return response.choices[0].message.content
 
 # ----------------------- API Endpoints -----------------------
 @app.post("/chat")
@@ -361,40 +316,19 @@ def update_kb():
 #     return {"status": "started", "message": "Export initiated in background"}
 
 
-# @app.post("/update-index")
 def build_faiss_index():
     try:
-        global index, query_engine
-        # Load documents
-        documents = SimpleDirectoryReader(settings.TEXT_FOLDER).load_data()
-        if not documents:
+        global faiss_index, document_texts
+        texts = load_text_files(settings.TEXT_FOLDER)
+        if not texts:
             raise HTTPException(status_code=404, detail="No documents found in the specified folder.")
-        
-        print(f"Loaded {len(documents)} documents from {settings.TEXT_FOLDER}")
-        embed_model = OpenAIEmbedding(model="text-embedding-3-large", api_key=settings.OPENAI_API_KEY)
-        # Use if want to utilize chunking mechanism
 
-        # chunk_size = 2000
-        # chunk_overlap = 100
-        # parser = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-        # nodes = parser.get_nodes_from_documents(documents)
-
-        embedding_dim = 3072
-        faiss_index = faiss.IndexFlatL2(embedding_dim)
-        vector_store = FaissVectorStore(faiss_index=faiss_index)
-        storage_context = StorageContext.from_defaults(vector_store=vector_store)
-
-        # Build the vector index
-        index = VectorStoreIndex.from_documents(documents,storage_context=storage_context,embed_model=embed_model)
-        #index = VectorStoreIndex(nodes, storage_context=storage_context, embed_model=embed_model)
-
-        # Persist to disk
-        index.storage_context.persist()
-        query_engine = index.as_query_engine(llm=openai_llm, similarity_top_k=7)
+        print(f"Loaded {len(texts)} documents from {settings.TEXT_FOLDER}")
+        faiss_index, document_texts = build_and_persist_index(texts)
         print("Created and saved new FAISS index to ./storage")
         print("New FAISS index is ready for queries.")
-        return {"status": "ok", "documents_indexed": len(documents)}
-    
+        return {"status": "ok", "documents_indexed": len(texts)}
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to build FAISS index: {str(e)}")
     
