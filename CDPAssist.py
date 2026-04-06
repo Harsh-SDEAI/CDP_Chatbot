@@ -201,10 +201,23 @@ openai_llm = OpenAI(
     max_tokens=1024
 )
 persist_dir = "./storage"
-vector_store = FaissVectorStore.from_persist_dir(persist_dir)
-storage_context = StorageContext.from_defaults(vector_store=vector_store, persist_dir=persist_dir)
-index = load_index_from_storage(storage_context=storage_context)
-print("Loaded FAISS index from Local machine.")
+if os.path.exists(persist_dir):
+    vector_store = FaissVectorStore.from_persist_dir(persist_dir)
+    storage_context = StorageContext.from_defaults(vector_store=vector_store, persist_dir=persist_dir)
+    index = load_index_from_storage(storage_context=storage_context)
+    print("Loaded FAISS index from Local machine.")
+else:
+    documents = SimpleDirectoryReader(text_folder).load_data()
+    if not documents:
+        raise Exception("No documents found in the specified folder.")
+    print(f"Loaded {len(documents)} documents.")
+    embedding_dim = 3072
+    faiss_index = faiss.IndexFlatL2(embedding_dim)
+    vector_store = FaissVectorStore(faiss_index=faiss_index)
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    index = VectorStoreIndex.from_documents(documents, storage_context=storage_context, embed_model=Settings.embed_model)
+    index.storage_context.persist()
+    print("Created and saved new FAISS index.")
 query_engine = index.as_query_engine(llm=openai_llm, similarity_top_k=7)
 
 
