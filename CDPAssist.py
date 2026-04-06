@@ -196,7 +196,7 @@ def load_index_and_texts() -> tuple[faiss.Index, list[str]]:
         texts = json.load(f)
     return idx, texts
 
-def search_index(query: str, idx: faiss.Index, texts: list[str], top_k: int = 7) -> list[str]:
+def search_index(query: str, idx: faiss.Index, texts: list[str], top_k: int = 5) -> list[str]:
     """Embed query, search FAISS, return top_k text chunks."""
     q_vec = embed_texts([query])
     _, I = idx.search(q_vec, top_k)
@@ -257,7 +257,7 @@ Formatting instructions:
 
 def generate_response(user_query: str, sessionid: int, userid: int) -> str:
     # 1. Retrieve relevant chunks from FAISS
-    chunks = search_index(user_query, faiss_index, document_texts, top_k=7)
+    chunks = search_index(user_query, faiss_index, document_texts, top_k=5)
     context = "\n\n---\n\n".join(chunks)
 
     # 2. Send to OpenAI with context
