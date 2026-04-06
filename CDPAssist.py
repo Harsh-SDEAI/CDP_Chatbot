@@ -356,16 +356,16 @@ def get_chat_history(request: ChatHistoryRequest, api_key: str = Depends(verify_
         cursor.execute("""
             SELECT
                 ch.SessionId,
-                ch.LastTimestamp,
+                ch.LastCreatedOn,
                 (
                     SELECT TOP 1 LEFT(sub.Question, 35)
                     FROM CDPChatHistory sub
                     WHERE sub.SessionId = ch.SessionId
                       AND sub.UserRegistrationId = ?
-                    ORDER BY sub.id ASC
+                    ORDER BY sub.ChatHistoryId ASC
                 ) AS ChatTitle
             FROM (
-                SELECT SessionId, MAX(id) AS LatestId, MAX(TimeStamp) AS LastTimestamp
+                SELECT SessionId, MAX(ChatHistoryId) AS LatestId, MAX(CreatedOn) AS LastCreatedOn
                 FROM CDPChatHistory
                 WHERE UserRegistrationId = ?
                 GROUP BY SessionId
@@ -394,10 +394,10 @@ def get_session_history(request: SessionHistoryRequest, api_key: str = Depends(v
         db = get_db_connection()
         cursor = db.cursor()
         cursor.execute("""
-            SELECT Question, Answer, TimeStamp
+            SELECT Question, Answer, CreatedOn
             FROM CDPChatHistory
             WHERE UserRegistrationId = ? AND SessionId = ?
-            ORDER BY id ASC
+            ORDER BY ChatHistoryId ASC
         """, (request.userid, request.sessionid))
         rows = cursor.fetchall()
         messages = []
