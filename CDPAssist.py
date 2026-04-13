@@ -145,22 +145,71 @@ FAISS_INDEX_PATH = os.path.join(PERSIST_DIR, "faiss.index")
 TEXTS_PATH = os.path.join(PERSIST_DIR, "texts.json")
 
 # ----------------------- FAISS Helpers -----------------------
-CHUNK_SIZE = 2000   # characters per chunk (~500 tokens)
-CHUNK_OVERLAP = 200 # overlap between consecutive chunks
+CHUNK_SIZE = 800    # characters per chunk (~200 tokens)
+CHUNK_OVERLAP = 100 # overlap between consecutive chunks
+
+def normalize_source_text(text: str) -> str:
+    """Clean up raw source text before chunking.
+
+    Strips ruler lines (e.g. long runs of underscores/dashes), collapses
+    excessive blank lines, and trims trailing whitespace on each line.
+    """
+    # Drop ruler lines made of _, -, =, * (5 or more in a row, possibly with spaces).
+    text = re.sub(r'(?m)^[\s]*[_\-=*]{5,}[\s]*$', '', text)
+    # Trim trailing whitespace on every line.
+    text = re.sub(r'[ \t]+\n', '\n', text)
+    # Collapse 3+ consecutive newlines down to exactly two (paragraph break).
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    return text.strip()
 
 def chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list[str]:
-    """Split text into sentence-aware chunks with overlap.
+    """Split text into chunks aligned to Q&A pair boundaries when possible.
 
-    Respects sentence boundaries (., !, ?) so chunks don't cut off mid-sentence.
-    Falls back to character splitting only if a single sentence exceeds chunk_size.
+    Q&A pairs written by export_qa_pairs_job are separated by blank lines
+    (``\\n\\n``). We split on those first so one chunk == one pair whenever
+    the pair fits within chunk_size. Oversized pairs fall back to
+    sentence-aware splitting with overlap.
     """
-    text = text.strip()
+    text = normalize_source_text(text)
     if not text:
         return []
 
-    # Split on sentence-ending punctuation followed by whitespace.
-    sentences = re.split(r'(?<=[.!?])\s+', text)
+    # Split on blank lines — these are the natural Q&A pair boundaries.
+    pairs = [p.strip() for p in re.split(r'\n{2,}', text) if p.strip()]
 
+    chunks = []
+    current_chunk = []
+    current_size = 0
+
+    for pair in pairs:
+        pair_size = len(pair)
+
+        # Oversized pair: flush current buffer, then sentence-split this pair.
+        if pair_size > chunk_size:
+            if current_chunk:
+                chunks.append("\n\n".join(current_chunk))
+                current_chunk = []
+                current_size = 0
+            chunks.extend(_split_oversized(pair, chunk_size, overlap))
+            continue
+
+        # If adding this pair would overflow the current chunk, flush first.
+        if current_size + pair_size > chunk_size and current_chunk:
+            chunks.append("\n\n".join(current_chunk))
+            current_chunk = []
+            current_size = 0
+
+        current_chunk.append(pair)
+        current_size += pair_size + 2  # +2 for the "\n\n" joiner
+
+    if current_chunk:
+        chunks.append("\n\n".join(current_chunk))
+
+    return chunks
+
+def _split_oversized(text: str, chunk_size: int, overlap: int) -> list[str]:
+    """Sentence-aware splitter used for pairs that exceed chunk_size."""
+    sentences = re.split(r'(?<=[.!?])\s+', text)
     chunks = []
     current_chunk = []
     current_size = 0
@@ -168,7 +217,6 @@ def chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVE
     for sentence in sentences:
         sentence_size = len(sentence)
 
-        # Edge case: single sentence bigger than chunk_size — fall back to char splitting.
         if sentence_size > chunk_size:
             if current_chunk:
                 chunks.append(" ".join(current_chunk))
@@ -179,8 +227,6 @@ def chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVE
                 chunks.append(sentence[i:i + chunk_size])
             continue
 
-        # If adding this sentence would overflow, finalize the current chunk
-        # and carry over the tail as overlap.
         if current_size + sentence_size > chunk_size and current_chunk:
             chunks.append(" ".join(current_chunk))
             overlap_sentences = []
@@ -194,7 +240,7 @@ def chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVE
             current_size = overlap_size
 
         current_chunk.append(sentence)
-        current_size += sentence_size + 1  # +1 for the space between sentences
+        current_size += sentence_size + 1
 
     if current_chunk:
         chunks.append(" ".join(current_chunk))
