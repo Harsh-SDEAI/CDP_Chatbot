@@ -7,3 +7,4 @@ pyodbc==5.2.0
 numpy==1.26.4
 faiss-cpu==1.13.2
 openai>=1.58.0
+rank-bm25==0.2.2

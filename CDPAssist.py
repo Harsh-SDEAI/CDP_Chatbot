@@ -10,6 +10,7 @@ import pyodbc
 import numpy as np
 import openai
 import settings
+from rank_bm25 import BM25Okapi
 from fastapi.middleware.cors import CORSMiddleware
 
 # Database Credentials
@@ -308,12 +309,102 @@ def load_index_and_texts() -> tuple[faiss.Index, list[str]]:
         texts = json.load(f)
     return idx, texts
 
-def search_index(query: str, idx: faiss.Index, texts: list[str], top_k: int = 5) -> list[str]:
-    """Embed query, search FAISS, return top_k text chunks (via cosine similarity)."""
+# ----------------------- BM25 (keyword) Retrieval -----------------------
+# Hybrid retrieval combines semantic (FAISS) with keyword (BM25) scoring.
+# BM25 boosts chunks containing rare/specific query terms (e.g. "vehicle")
+# that can get averaged out inside a mixed-topic chunk's embedding.
+
+_TOKEN_RE = re.compile(r"[A-Za-z0-9]+")
+
+# Common English stopwords. Without this filter, question words ("how", "do",
+# "my") match almost every chunk and drown out rare, discriminating terms.
+_STOPWORDS = {
+    'a','an','the','is','am','are','was','were','be','been','being',
+    'do','does','did','doing','done','have','has','had','having',
+    'i','me','my','mine','myself','we','our','ours','ourselves',
+    'you','your','yours','yourself','yourselves',
+    'he','him','his','himself','she','her','hers','herself',
+    'it','its','itself','they','them','their','theirs','themselves',
+    'this','that','these','those','what','which','who','whom','whose',
+    'when','where','why','how','there','here',
+    'and','or','but','if','because','as','while','of','at','by','for',
+    'with','about','against','between','into','through','during','before',
+    'after','above','below','to','from','up','down','in','out','on','off',
+    'over','under','again','further','then','once',
+    'no','not','only','own','same','so','than','too','very','can','will',
+    'just','should','would','could','may','might','must','shall',
+    's','t','don','now','also','get','got','go','going',
+}
+
+def _strip_suffix(tok: str) -> str:
+    """Crude English suffix stripper so 'vehicle' matches 'vehicles', etc.
+
+    Cheaper than pulling in a real stemmer. Good enough for plural/verb forms
+    common in FAQ-style text.
+    """
+    for suf in ('sses', 'ies', 'ing', 'ed'):
+        if len(tok) > len(suf) + 2 and tok.endswith(suf):
+            return tok[:-len(suf)]
+    if len(tok) > 3 and tok.endswith('s') and not tok.endswith('ss'):
+        return tok[:-1]
+    return tok
+
+def tokenize(text: str) -> list[str]:
+    """Lowercase tokenizer used for BM25: drops stopwords and normalizes suffixes."""
+    out = []
+    for tok in _TOKEN_RE.findall(text.lower()):
+        if len(tok) < 2 or tok in _STOPWORDS:
+            continue
+        out.append(_strip_suffix(tok))
+    return out
+
+def build_bm25(texts: list[str]) -> BM25Okapi:
+    """Build an in-memory BM25 index over the chunk texts."""
+    return BM25Okapi([tokenize(t) for t in texts])
+
+def _rrf_fuse(rankings: list[list[int]], k: int = 60) -> list[tuple[int, float]]:
+    """Reciprocal Rank Fusion across multiple ranked lists of chunk indices.
+
+    Each ranking is a list of chunk indices ordered best-first. Returns a
+    list of (chunk_index, fused_score) sorted by descending fused score.
+    """
+    scores: dict[int, float] = {}
+    for ranking in rankings:
+        for rank, idx in enumerate(ranking):
+            scores[idx] = scores.get(idx, 0.0) + 1.0 / (k + rank)
+    return sorted(scores.items(), key=lambda x: -x[1])
+
+def search_index(query: str,
+                 idx: faiss.Index,
+                 texts: list[str],
+                 bm25: BM25Okapi,
+                 top_k: int = 5,
+                 candidate_pool: int = 20) -> list[str]:
+    """Hybrid retrieval: run FAISS (cosine) and BM25, fuse via RRF, return top_k.
+
+    Each retriever contributes its top ``candidate_pool`` results; RRF then
+    picks the top_k chunks that rank well under either signal. This keeps
+    semantic paraphrase matching (FAISS) while letting rare keyword hits
+    (BM25) rescue queries where the right chunk's embedding is diluted.
+    """
+    # Semantic ranking
     q_vec = embed_texts([query])
-    faiss.normalize_L2(q_vec)  # must normalize query vector too for cosine similarity
-    _, I = idx.search(q_vec, top_k)
-    return [texts[i] for i in I[0] if i < len(texts)]
+    faiss.normalize_L2(q_vec)
+    _, I = idx.search(q_vec, candidate_pool)
+    vec_ranking = [int(i) for i in I[0] if 0 <= i < len(texts)]
+
+    # Keyword ranking
+    q_tokens = tokenize(query)
+    if q_tokens:
+        bm_scores = bm25.get_scores(q_tokens)
+        bm25_ranking = list(np.argsort(-bm_scores)[:candidate_pool])
+        bm25_ranking = [int(i) for i in bm25_ranking if bm_scores[i] > 0]
+    else:
+        bm25_ranking = []
+
+    fused = _rrf_fuse([vec_ranking, bm25_ranking])
+    top = [i for i, _ in fused[:top_k]]
+    return [texts[i] for i in top]
 
 # ----------------------- Load or Build Index at Startup -----------------------
 text_folder = settings.TEXT_FOLDER
@@ -329,6 +420,10 @@ else:
     print(f"Loaded {file_count} files, {len(document_texts)} chunks.")
     faiss_index, document_texts = build_and_persist_index(document_texts)
     print("Created and saved new FAISS index.")
+
+# BM25 is cheap to rebuild from texts — no need to persist it separately.
+bm25_index = build_bm25(document_texts)
+print(f"Built BM25 index over {len(document_texts)} chunks.")
 
 
 # ----------------------- Request Model -----------------------
@@ -369,8 +464,8 @@ Formatting instructions:
 - Analyze the content carefully and apply HTML tags effectively—do not create lists unless clearly needed."""
 
 def generate_response(user_query: str, sessionid: int, userid: int) -> str:
-    # 1. Retrieve relevant chunks from FAISS
-    chunks = search_index(user_query, faiss_index, document_texts, top_k=8)
+    # 1. Retrieve relevant chunks via hybrid (FAISS + BM25) search
+    chunks = search_index(user_query, faiss_index, document_texts, bm25_index, top_k=8)
 
     # Debug: log the query and a preview of the retrieved chunks so we can
     # diagnose retrieval failures (e.g. when the bot falls back despite the
@@ -455,7 +550,7 @@ def update_kb():
 
 def build_faiss_index():
     try:
-        global faiss_index, document_texts
+        global faiss_index, document_texts, bm25_index
         texts = load_text_files(settings.TEXT_FOLDER)
         if not texts:
             raise HTTPException(status_code=404, detail="No documents found in the specified folder.")
@@ -463,7 +558,8 @@ def build_faiss_index():
         file_count = len([f for f in os.listdir(settings.TEXT_FOLDER) if f.endswith(".txt")])
         print(f"Loaded {file_count} files, {len(texts)} chunks from {settings.TEXT_FOLDER}")
         faiss_index, document_texts = build_and_persist_index(texts)
-        print("New FAISS index is ready for queries.")
+        bm25_index = build_bm25(document_texts)
+        print("New FAISS + BM25 indexes are ready for queries.")
         return {"status": "ok", "files_loaded": file_count, "chunks_indexed": len(texts)}
 
     except Exception as e:
