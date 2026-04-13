@@ -185,9 +185,15 @@ def chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVE
     for pair in pairs:
         pair_size = len(pair)
 
-        # Oversized pair: flush current buffer, then sentence-split this pair.
+        # Oversized pair: if a short stub is buffered, prepend it to this
+        # pair so the stub rides along into the first split chunk instead of
+        # being emitted as an orphan. Otherwise flush the buffer first.
         if pair_size > chunk_size:
-            if current_chunk:
+            if current_chunk and current_size < MIN_CHUNK_SIZE:
+                pair = "\n\n".join(current_chunk) + "\n\n" + pair
+                current_chunk = []
+                current_size = 0
+            elif current_chunk:
                 chunks.append("\n\n".join(current_chunk))
                 current_chunk = []
                 current_size = 0
