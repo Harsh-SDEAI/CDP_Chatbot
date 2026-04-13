@@ -370,7 +370,16 @@ Formatting instructions:
 
 def generate_response(user_query: str, sessionid: int, userid: int) -> str:
     # 1. Retrieve relevant chunks from FAISS
-    chunks = search_index(user_query, faiss_index, document_texts, top_k=5)
+    chunks = search_index(user_query, faiss_index, document_texts, top_k=8)
+
+    # Debug: log the query and a preview of the retrieved chunks so we can
+    # diagnose retrieval failures (e.g. when the bot falls back despite the
+    # answer being in the corpus).
+    print(f"[retrieval] query={user_query!r}")
+    for i, c in enumerate(chunks):
+        preview = c[:150].replace("\n", " ")
+        print(f"  [{i}] len={len(c)} | {preview!r}")
+
     context = "\n\n---\n\n".join(chunks)
 
     # 2. Send to OpenAI with context
