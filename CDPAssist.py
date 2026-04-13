@@ -147,6 +147,7 @@ TEXTS_PATH = os.path.join(PERSIST_DIR, "texts.json")
 # ----------------------- FAISS Helpers -----------------------
 CHUNK_SIZE = 800    # characters per chunk (~200 tokens)
 CHUNK_OVERLAP = 100 # overlap between consecutive chunks
+MIN_CHUNK_SIZE = 200  # below this, keep merging with the next paragraph
 
 def normalize_source_text(text: str) -> str:
     """Clean up raw source text before chunking.
@@ -193,8 +194,13 @@ def chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVE
             chunks.extend(_split_oversized(pair, chunk_size, overlap))
             continue
 
-        # If adding this pair would overflow the current chunk, flush first.
-        if current_size + pair_size > chunk_size and current_chunk:
+        # If adding this pair would overflow the current chunk, flush first —
+        # BUT only if the current buffer already has enough content to stand
+        # alone. Short stubs (titles, stray fragments) keep accumulating so
+        # they don't get emitted as orphan chunks with no real content.
+        if (current_size + pair_size > chunk_size
+                and current_chunk
+                and current_size >= MIN_CHUNK_SIZE):
             chunks.append("\n\n".join(current_chunk))
             current_chunk = []
             current_size = 0
@@ -203,7 +209,13 @@ def chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVE
         current_size += pair_size + 2  # +2 for the "\n\n" joiner
 
     if current_chunk:
-        chunks.append("\n\n".join(current_chunk))
+        # If the final buffer is a lonely stub and we have a previous chunk,
+        # glue it onto the tail of that chunk instead of emitting it alone.
+        final = "\n\n".join(current_chunk)
+        if len(final) < MIN_CHUNK_SIZE and chunks:
+            chunks[-1] = chunks[-1] + "\n\n" + final
+        else:
+            chunks.append(final)
 
     return chunks
 
