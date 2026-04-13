@@ -149,13 +149,56 @@ CHUNK_SIZE = 2000   # characters per chunk (~500 tokens)
 CHUNK_OVERLAP = 200 # overlap between consecutive chunks
 
 def chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list[str]:
-    """Split text into overlapping chunks by character count."""
+    """Split text into sentence-aware chunks with overlap.
+
+    Respects sentence boundaries (., !, ?) so chunks don't cut off mid-sentence.
+    Falls back to character splitting only if a single sentence exceeds chunk_size.
+    """
+    text = text.strip()
+    if not text:
+        return []
+
+    # Split on sentence-ending punctuation followed by whitespace.
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+
     chunks = []
-    start = 0
-    while start < len(text):
-        end = start + chunk_size
-        chunks.append(text[start:end])
-        start += chunk_size - overlap
+    current_chunk = []
+    current_size = 0
+
+    for sentence in sentences:
+        sentence_size = len(sentence)
+
+        # Edge case: single sentence bigger than chunk_size — fall back to char splitting.
+        if sentence_size > chunk_size:
+            if current_chunk:
+                chunks.append(" ".join(current_chunk))
+                current_chunk = []
+                current_size = 0
+            step = max(1, chunk_size - overlap)
+            for i in range(0, sentence_size, step):
+                chunks.append(sentence[i:i + chunk_size])
+            continue
+
+        # If adding this sentence would overflow, finalize the current chunk
+        # and carry over the tail as overlap.
+        if current_size + sentence_size > chunk_size and current_chunk:
+            chunks.append(" ".join(current_chunk))
+            overlap_sentences = []
+            overlap_size = 0
+            for s in reversed(current_chunk):
+                if overlap_size + len(s) > overlap:
+                    break
+                overlap_sentences.insert(0, s)
+                overlap_size += len(s) + 1
+            current_chunk = overlap_sentences
+            current_size = overlap_size
+
+        current_chunk.append(sentence)
+        current_size += sentence_size + 1  # +1 for the space between sentences
+
+    if current_chunk:
+        chunks.append(" ".join(current_chunk))
+
     return chunks
 
 def load_text_files(folder: str) -> list[str]:
@@ -179,9 +222,14 @@ def embed_texts(texts: list[str]) -> np.ndarray:
     return np.array(all_embeddings, dtype=np.float32)
 
 def build_and_persist_index(texts: list[str]) -> tuple[faiss.Index, list[str]]:
-    """Build a FAISS index from texts, persist index + texts to disk."""
+    """Build a FAISS index from texts, persist index + texts to disk.
+
+    Uses IndexFlatIP (inner product) with L2-normalized vectors = cosine similarity,
+    which is what OpenAI embeddings are designed for.
+    """
     vectors = embed_texts(texts)
-    idx = faiss.IndexFlatL2(EMBEDDING_DIM)
+    faiss.normalize_L2(vectors)  # in-place normalization
+    idx = faiss.IndexFlatIP(EMBEDDING_DIM)
     idx.add(vectors)
     os.makedirs(PERSIST_DIR, exist_ok=True)
     faiss.write_index(idx, FAISS_INDEX_PATH)
@@ -197,8 +245,9 @@ def load_index_and_texts() -> tuple[faiss.Index, list[str]]:
     return idx, texts
 
 def search_index(query: str, idx: faiss.Index, texts: list[str], top_k: int = 5) -> list[str]:
-    """Embed query, search FAISS, return top_k text chunks."""
+    """Embed query, search FAISS, return top_k text chunks (via cosine similarity)."""
     q_vec = embed_texts([query])
+    faiss.normalize_L2(q_vec)  # must normalize query vector too for cosine similarity
     _, I = idx.search(q_vec, top_k)
     return [texts[i] for i in I[0] if i < len(texts)]
 
