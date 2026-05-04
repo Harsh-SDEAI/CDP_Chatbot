@@ -55,6 +55,30 @@ def clean_text(text):
     text = re.sub(r'\s+([.,;:!?])', r'\1', text)
     return text.strip()
 
+def get_conversation_history(userid: int, sessionid: str, limit: int) -> list[dict]:
+    if limit == 0:
+        return []
+    db = get_db_connection()
+    try:
+        cursor = db.cursor()
+        cursor.execute(
+            "SELECT TOP (?) Question, Answer FROM CDPChatHistory "
+            "WHERE UserRegistrationId = ? AND SessionId = ? "
+            "ORDER BY ChatHistoryId DESC",
+            (limit, userid, sessionid)
+        )
+        rows = cursor.fetchall()
+        messages = []
+        for row in reversed(rows):
+            messages.append({"role": "user", "content": row[0]})
+            messages.append({"role": "assistant", "content": clean_text(row[1])})
+        return messages
+    except Exception as e:
+        print(f"[history] Error fetching conversation history: {e}")
+        return []
+    finally:
+        db.close()
+
 def get_last_file_index_and_size():
     if not os.path.exists(SAVE_PATH):
         os.makedirs(SAVE_PATH)
@@ -371,7 +395,7 @@ Formatting instructions:
 - Do not use Markdown syntax (e.g., ** or *).
 - Analyze the content carefully and apply HTML tags effectively—do not create lists unless clearly needed."""
 
-def generate_response(user_query: str, sessionid: int, userid: int) -> str:
+def generate_response(user_query: str, sessionid: str, userid: int) -> str:
     # 1. Retrieve relevant chunks from FAISS
     chunks = search_index(user_query, faiss_index, document_texts, top_k=8)
 
@@ -385,16 +409,20 @@ def generate_response(user_query: str, sessionid: int, userid: int) -> str:
 
     context = "\n\n---\n\n".join(chunks)
 
-    # 2. Send to OpenAI with context
+    # 2. Fetch prior turns from this session for follow-up question support
+    history = get_conversation_history(userid, sessionid, limit=settings.USER_LIMIT)
+
+    # 3. Build messages: system → prior turns → current question with context
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages.extend(history)
+    messages.append({"role": "user", "content": f"Context:\n{context}\n\nUser question: {user_query}"})
+
     response = openai_client.chat.completions.create(
         model=LLM_MODEL,
         temperature=0.1,
         top_p=0.8,
         max_tokens=1024,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": f"Context:\n{context}\n\nUser question: {user_query}"}
-        ]
+        messages=messages
     )
     return response.choices[0].message.content
 
