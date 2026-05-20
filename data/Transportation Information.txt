@@ -1,0 +1,9 @@
+TRANSPORTATION INFORMATION
+
+AIRPORTS:
+-Albany International- 1.5 hours
+-Greater Binghamton- 1.5 hours
+-Syracuse Hancock International- 2 hours
+-LaGuardia- 3.75 hours
+-Newark Liberty International- 3.75 hours
+-JFK International- 4 hours
