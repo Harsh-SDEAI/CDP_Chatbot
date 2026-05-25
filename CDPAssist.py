@@ -47,6 +47,14 @@ def get_db_connection():
         'DATABASE='+DATABASE_NAME+';'
         'UID='+USER_NAME+';PWD='+PASSWORD+';'
     )
+
+def get_cdp2000_connection():
+    return pyodbc.connect(
+        'DRIVER='+settings.CDP_DB_DRIVER+';'
+        'SERVER='+settings.CDP_DB_SERVER+';'
+        'DATABASE='+settings.CDP_DB_NAME+';'
+        'UID='+settings.CDP_DB_USER+';PWD='+settings.CDP_DB_PASSWORD+';'
+    )
  
 def clean_text(text):
     text = re.sub(r'<[^>]*>', '', text or '')
@@ -121,7 +129,7 @@ def get_player_context(userid: int) -> str | None:
     """
     db = None
     try:
-        db = get_db_connection()
+        db = get_cdp2000_connection()
         cursor = db.cursor()
 
         cursor.execute(
