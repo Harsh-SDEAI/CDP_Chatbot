@@ -79,6 +79,134 @@ def get_conversation_history(userid: int, sessionid: str, limit: int) -> list[di
     finally:
         db.close()
 
+TOURNAMENT_DAY_GUIDE = """TOURNAMENT DAY GUIDE:
+- Day 1: Skills competition
+- Day 2: 1 regular game per team
+- Days 3-4: 2 regular games per team
+- Days 5-6: Bracket play, championship game on Day 6
+- Day 7: Departure"""
+
+PLAYER_CONTEXT_INSTRUCTIONS = """INSTRUCTIONS FOR USING PLAYER CONTEXT:
+- For any question about the user, their team, schedule, scores, or standings, answer ONLY from the data above. Do not infer, guess, or use outside knowledge.
+- When the user asks about games on a specific day, list ONLY the games shown in SCHEDULE for that day. If no games are shown for that day, say they have no games on that day. Do NOT explain why (do not mention elimination, byes, or bracket status).
+- Greet the user by first name ONLY on the first message of a session (when there is no prior conversation history). Otherwise answer without a greeting.
+- The TOURNAMENT DAY GUIDE is for general "what happens on day X" questions only. The player's actual SCHEDULE always takes precedence over the guide."""
+
+def _format_game_line(game: dict, my_team_key) -> str:
+    is_home = (game["HomeTeamKey"] == my_team_key)
+    my_team = game["HomeTeamName"] if is_home else game["VisitorTeamName"]
+    opp_team = game["VisitorTeamName"] if is_home else game["HomeTeamName"]
+    my_score = game["HomeScore"] if is_home else game["VisitorScore"]
+    opp_score = game["VisitorScore"] if is_home else game["HomeScore"]
+
+    if my_score is not None and opp_score is not None:
+        if my_score > opp_score:
+            outcome = f"Won {my_score}-{opp_score}"
+        elif my_score < opp_score:
+            outcome = f"Lost {my_score}-{opp_score}"
+        else:
+            outcome = f"Tied {my_score}-{opp_score}"
+    else:
+        outcome = "Upcoming"
+
+    return (
+        f"- Day {game['Day']} ({game['DayOfWeek']}) {game['TimeOfDay']}, "
+        f"Field {game['Field']}: {my_team} vs {opp_team} — {outcome}"
+    )
+
+def get_player_context(userid: int) -> str | None:
+    """Fetch the player's identity, schedule, and standings and format them
+    as a system-prompt context block. Returns None if the user isn't found
+    or any DB call fails — caller falls back to the standard RAG flow.
+    """
+    db = None
+    try:
+        db = get_db_connection()
+        cursor = db.cursor()
+
+        cursor.execute(
+            "SELECT FirstName, LastName, TeamKey FROM Roster WHERE RosterID = ?",
+            (userid,)
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        first_name = (row[0] or "").strip().title()
+        last_name = (row[1] or "").strip().title()
+        team_key = row[2]
+        if not team_key:
+            return None
+
+        cursor.execute(
+            "SELECT Day, DayOfWeek, TimeOfDay, Field, "
+            "HomeTeamName, VisitorTeamName, HomeScore, VisitorScore, HomeTeamKey "
+            "FROM AllGamesCurrentYear "
+            "WHERE HomeTeamKey = ? OR VisitorTeamKey = ? "
+            "ORDER BY GameDateTimeField",
+            (team_key, team_key)
+        )
+        game_rows = cursor.fetchall()
+
+        games = []
+        my_team_name = None
+        for g in game_rows:
+            game = {
+                "Day": g[0],
+                "DayOfWeek": g[1],
+                "TimeOfDay": g[2],
+                "Field": g[3],
+                "HomeTeamName": g[4],
+                "VisitorTeamName": g[5],
+                "HomeScore": g[6],
+                "VisitorScore": g[7],
+                "HomeTeamKey": g[8],
+            }
+            games.append(game)
+            if my_team_name is None:
+                is_home = (game["HomeTeamKey"] == team_key)
+                my_team_name = game["HomeTeamName"] if is_home else game["VisitorTeamName"]
+
+        cursor.execute(
+            "SELECT TeamSequence, Wins, Losses, RunsFor, RunsAgainst "
+            "FROM RegularCurrentStandings WHERE TeamKey = ?",
+            (team_key,)
+        )
+        standings_row = cursor.fetchone()
+
+        lines = ["=== PLAYER CONTEXT ===", ""]
+        full_name = f"{first_name} {last_name}".strip()
+        lines.append(f"Player: {full_name}" if full_name else "Player: (name not on file)")
+        if my_team_name:
+            lines.append(f"Team: {my_team_name}")
+        lines.append("")
+
+        if games:
+            lines.append("SCHEDULE:")
+            for game in games:
+                lines.append(_format_game_line(game, team_key))
+            lines.append("")
+
+        if standings_row:
+            seq, wins, losses, rf, ra = standings_row
+            lines.append("STANDINGS (regular play):")
+            lines.append(f"Standing: {seq} | Record: {wins}-{losses} | Runs: {rf}-{ra}")
+            lines.append("")
+
+        lines.append(TOURNAMENT_DAY_GUIDE)
+        lines.append("")
+        lines.append(PLAYER_CONTEXT_INSTRUCTIONS)
+        lines.append("")
+        lines.append("=== END PLAYER CONTEXT ===")
+
+        return "\n".join(lines)
+
+    except Exception as e:
+        print(f"[player_context] Error: {e}")
+        return None
+    finally:
+        if db is not None:
+            db.close()
+
 def get_last_file_index_and_size():
     if not os.path.exists(SAVE_PATH):
         os.makedirs(SAVE_PATH)
@@ -163,7 +291,7 @@ def export_qa_pairs_job():
 openai_client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
 EMBEDDING_MODEL = "text-embedding-3-large"
 EMBEDDING_DIM = 3072
-LLM_MODEL = "gpt-4o-mini"
+LLM_MODEL = "gpt-5-mini"
 PERSIST_DIR = "./storage"
 FAISS_INDEX_PATH = os.path.join(PERSIST_DIR, "faiss.index")
 TEXTS_PATH = os.path.join(PERSIST_DIR, "texts.json")
@@ -412,8 +540,15 @@ def generate_response(user_query: str, sessionid: str, userid: int) -> str:
     # 2. Fetch prior turns from this session for follow-up question support
     history = get_conversation_history(userid, sessionid, limit=settings.USER_LIMIT)
 
-    # 3. Build messages: system → prior turns → current question with context
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    # 3. Fetch the player's identity, schedule, and standings for personalization.
+    # Falls back to None if the user isn't found or the DB call fails.
+    player_context = get_player_context(userid)
+    system_content = SYSTEM_PROMPT
+    if player_context:
+        system_content = player_context + "\n\n" + SYSTEM_PROMPT
+
+    # 4. Build messages: system → prior turns → current question with context
+    messages = [{"role": "system", "content": system_content}]
     messages.extend(history)
     messages.append({"role": "user", "content": f"Context:\n{context}\n\nUser question: {user_query}"})
 
