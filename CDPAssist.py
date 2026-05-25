@@ -554,9 +554,7 @@ def generate_response(user_query: str, sessionid: str, userid: int) -> str:
 
     response = openai_client.chat.completions.create(
         model=LLM_MODEL,
-        temperature=0.1,
-        top_p=0.8,
-        max_tokens=1024,
+        max_completion_tokens=1024,
         messages=messages
     )
     return response.choices[0].message.content
