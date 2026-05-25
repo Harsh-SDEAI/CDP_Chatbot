@@ -140,7 +140,7 @@ def get_player_context(userid: int) -> str | None:
         cursor.execute(
             "SELECT Day, DayOfWeek, TimeOfDay, Field, "
             "HomeTeamName, VisitorTeamName, HomeScore, VisitorScore, HomeTeamKey "
-            "FROM AllGamesCurrentYear "
+            "FROM WSA.AllGamesCurrentYear "
             "WHERE HomeTeamKey = ? OR VisitorTeamKey = ? "
             "ORDER BY GameDateTimeField",
             (team_key, team_key)
