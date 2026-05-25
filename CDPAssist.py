@@ -117,9 +117,13 @@ def _format_game_line(game: dict, my_team_key) -> str:
     else:
         outcome = "Upcoming"
 
+    game_type = game.get("GameType") or "Unknown"
+    if game_type == "Schedule":
+        game_type = "Regular"
+
     return (
         f"- Day {game['Day']} ({game['DayOfWeek']}) {game['TimeOfDay']}, "
-        f"Field {game['Field']}: {my_team} vs {opp_team} — {outcome}"
+        f"Field {game['Field']} [{game_type}]: {my_team} vs {opp_team} — {outcome}"
     )
 
 def get_player_context(userid: int) -> str | None:
@@ -147,7 +151,7 @@ def get_player_context(userid: int) -> str | None:
 
         cursor.execute(
             "SELECT Day, DayOfWeek, TimeOfDay, Field, "
-            "HomeTeamName, VisitorTeamName, HomeScore, VisitorScore, HomeTeamKey "
+            "HomeTeamName, VisitorTeamName, HomeScore, VisitorScore, HomeTeamKey, GameType "
             "FROM WSA.AllGamesCurrentYear "
             "WHERE HomeTeamKey = ? OR VisitorTeamKey = ? "
             "ORDER BY GameDateTimeField",
@@ -168,6 +172,7 @@ def get_player_context(userid: int) -> str | None:
                 "HomeScore": g[6],
                 "VisitorScore": g[7],
                 "HomeTeamKey": g[8],
+                "GameType": g[9],
             }
             games.append(game)
             if my_team_name is None:
