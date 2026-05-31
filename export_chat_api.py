@@ -219,12 +219,27 @@ def build_workbook_bytes(chat_columns, chat_rows, player_details):
     """
     Build the .xlsx in memory and return the raw bytes.
     Layout:
-        [player cols] + <all chat cols> + [Review] + [Topic] + [Information]
+        [UserRegistrationId] + [player cols] + <chat cols, userid MOVED out>
+        + [Review] + [Topic] + [Information]
+    The userid is moved (not duplicated) from its original chat position to
+    column A; every other chat column keeps its order.
     """
+    # Locate the userid column among the chat columns
+    try:
+        userid_pos = list(chat_columns).index(USERID_COLUMN)
+    except ValueError:
+        userid_pos = None
+
+    # Chat columns to display, with the userid removed (it moves to column A).
+    # Keep (original_index, name) so row values stay aligned.
+    display_chat = [
+        (i, name) for i, name in enumerate(chat_columns) if i != userid_pos
+    ]
+
     headers = (
         [USERID_FRONT_HEADER]
         + list(PLAYER_HEADERS)
-        + list(chat_columns)
+        + [name for _, name in display_chat]
         + [REVIEW_COLUMN_HEADER]
         + EXTRA_REVIEW_HEADERS
     )
@@ -242,12 +257,6 @@ def build_workbook_bytes(chat_columns, chat_rows, player_details):
         cell.fill = header_fill
         cell.alignment = Alignment(vertical="center", wrap_text=True)
 
-    # Locate the userid column among the chat columns
-    try:
-        userid_pos = list(chat_columns).index(USERID_COLUMN)
-    except ValueError:
-        userid_pos = None
-
     # Front block = userid column + player columns
     n_front = 1 + len(PLAYER_HEADERS)
 
@@ -256,24 +265,23 @@ def build_workbook_bytes(chat_columns, chat_rows, player_details):
         uid = row[userid_pos] if userid_pos is not None else None
         info = player_details.get(uid, {})
 
-        # Column A: userid pulled to the front
+        # Column A: userid moved to the front
         ws.cell(row=r_idx, column=1, value=clean_value(uid, USERID_FRONT_HEADER))
 
         # Player columns next (cleaned for safety)
         for c_idx, header in enumerate(PLAYER_HEADERS, start=2):
             ws.cell(row=r_idx, column=c_idx, value=clean_value(info.get(header), header))
 
-        # Then the original chat columns (cleaned)
-        for c_offset, value in enumerate(row):
-            col_name = chat_columns[c_offset]
+        # Then the remaining chat columns (userid already moved out), cleaned
+        for c_offset, (orig_idx, col_name) in enumerate(display_chat):
             ws.cell(
                 row=r_idx,
                 column=n_front + 1 + c_offset,
-                value=clean_value(value, col_name),
+                value=clean_value(row[orig_idx], col_name),
             )
 
     # Correct / Incorrect dropdown on the Review column for every data row
-    review_col_idx = n_front + len(chat_columns) + 1
+    review_col_idx = n_front + len(display_chat) + 1
     review_col_letter = ws.cell(row=1, column=review_col_idx).column_letter
     if chat_rows:
         dv = DataValidation(
