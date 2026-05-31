@@ -2,31 +2,38 @@
 export_chat_api.py
 ==================
 Standalone FastAPI service that lets the QA team download a CDPChatHistory
-review spreadsheet for any date range, straight from the browser.
+review spreadsheet for any date range.
 
 How QA uses it (once deployed):
-    Open in a browser:
-        http://<server>:<port>/export-chat?start=2026-01-01&end=2026-05-31
-    The .xlsx downloads automatically to their device.
-
-    Or use the auto-generated form at:
-        http://<server>:<port>/docs
+    1. Open  http://<server>:<port>/docs
+    2. Click "Authorize" and paste the X-API-Key value.
+    3. Open the GET /export-chat endpoint, enter start + end dates
+       (format YYYY-MM-DD), click Execute, then "Download file".
 
 What it does:
     1. DB1 (chat DB): read ALL columns from CDPChatHistory for the date range.
     2. DB2 (CDP2000, different server): for each userid, look up the player's
-       team via:
+       team via Roster -> Team:
             SELECT TeamKey FROM Roster WHERE RosterID = ?
-       then the team / player details via:
             SELECT TeamKey, Year, TournamentID, FirstName, LastName, Email
-            FROM Team WHERE TeamKey = ?
-       (combined here into a single Roster->Team JOIN, and cached per userid).
+              FROM Team WHERE TeamKey = ?
+       (combined into a single Roster->Team JOIN inside CDP2000, cached per
+       userid). RosterID == the chat-side UserRegistrationId, and is unique.
     3. Stream back one .xlsx with those player details in FRONT of the chat
-       columns.
+       columns, plus trailing blank review columns:
+            Review (Correct / Incorrect dropdown) | Topic | Information
+
+NOTE on databases: the two databases live on different servers and are queried
+on two separate connections. They are never joined together in one query. The
+only JOIN (Roster->Team) happens entirely inside CDP2000.
+
+NOTE on read-only: this script issues SELECT statements only. For real
+enforcement, give the logins db_datareader and put ApplicationIntent=ReadOnly
+in the connection strings.
 
 This service is intentionally SEPARATE from the main CDPAssist app. It reads
-its two connection strings from a .env file (see .env.example) and imports
-nothing from the main service.
+its config from a .env file (see .env.example) and imports nothing from the
+main service.
 
 Requires: see requirements-export.txt
     pip install -r requirements-export.txt
@@ -37,14 +44,19 @@ Run:
 
 import io
 import os
+import re
+import html
 from datetime import datetime
 
 import pyodbc
 from dotenv import load_dotenv
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException, Security
+from fastapi.security import APIKeyHeader
 from fastapi.responses import StreamingResponse
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.worksheet.datavalidation import DataValidation
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
 load_dotenv()
 
@@ -52,24 +64,76 @@ load_dotenv()
 # CONFIGURATION
 # ============================================================
 
-# Two connection strings come from the .env file (values added manually).
+# Connection strings + API key come from the .env file (values added manually).
 CHAT_DB_CONNECTION_STRING = os.getenv("CHAT_DB_CONNECTION_STRING")
 CDP2000_DB_CONNECTION_STRING = os.getenv("CDP2000_DB_CONNECTION_STRING")
+EXPORT_API_KEY = os.getenv("EXPORT_API_KEY")
 
 # DB1 — chat history table
 CHAT_TABLE     = "CDPChatHistory"
 DATE_COLUMN    = "CreatedOn"            # column the date range filters on
-USERID_COLUMN  = "UserRegistrationId"   # chat-side userid (maps to Roster.RosterID)
+USERID_COLUMN  = "UserRegistrationId"   # chat-side userid (== Roster.RosterID)
 
-# DB2 — extra player columns we put in FRONT of the chat columns, in this order.
-# (These match the Team SELECT list you specified.)
+# DB2 — player columns put in FRONT of the chat columns, in this order
+# (these match the Team SELECT list you specified).
 PLAYER_HEADERS = ["TeamKey", "Year", "TournamentID", "FirstName", "LastName", "Email"]
 
-# Trailing blank review column
+# Trailing blank review columns
 REVIEW_COLUMN_HEADER = "Review (Correct / Incorrect)"
+EXTRA_REVIEW_HEADERS = ["Topic", "Information"]   # free-text columns for the reviewer
+
+# Chat columns whose values hold HTML that should be flattened to plain text
+HTML_TEXT_COLUMNS = {"answer", "question", "suggestedanswer"}
+
+# Excel hard limit on characters per cell
+EXCEL_MAX_CELL = 32767
+TRUNCATE_MARKER = "…[truncated]"
 
 # Filename prefix; the date range is appended automatically.
-OUTPUT_FILE_PREFIX = "CDPChatHistory_review"
+OUTPUT_FILE_PREFIX = "CDPAssist_prod_qna"
+
+# ============================================================
+# Value cleaning helpers
+# ============================================================
+
+_TAG_RE = re.compile(r"<[^>]+>")
+_WS_RE = re.compile(r"[ \t]*\n[ \t]*")
+
+
+def strip_html(text: str) -> str:
+    """Flatten stored HTML into readable plain text."""
+    # Turn common block/break tags into newlines so structure survives.
+    text = re.sub(r"(?i)<\s*br\s*/?\s*>", "\n", text)
+    text = re.sub(r"(?i)</\s*(p|div|li|tr|h[1-6])\s*>", "\n", text)
+    # Drop all remaining tags, then unescape entities (&amp; -> & etc.).
+    text = _TAG_RE.sub("", text)
+    text = html.unescape(text)
+    # Tidy whitespace.
+    text = _WS_RE.sub("\n", text)
+    return text.strip()
+
+
+def clean_value(value, column_name: str = ""):
+    """
+    Make a DB value safe for openpyxl:
+      - flatten HTML on known text columns
+      - strip illegal/control characters
+      - truncate anything over Excel's per-cell limit
+    Non-string values pass through untouched.
+    """
+    if not isinstance(value, str):
+        return value
+
+    if column_name.lower() in HTML_TEXT_COLUMNS:
+        value = strip_html(value)
+
+    value = ILLEGAL_CHARACTERS_RE.sub("", value)
+
+    if len(value) > EXCEL_MAX_CELL:
+        value = value[: EXCEL_MAX_CELL - len(TRUNCATE_MARKER)] + TRUNCATE_MARKER
+
+    return value
+
 
 # ============================================================
 # Database access
@@ -105,14 +169,14 @@ def fetch_chat_rows(start_date: str, end_date: str):
 def fetch_player_details(user_ids):
     """
     For each distinct userid, look up the player's team/player details from
-    CDP2000 by joining Roster -> Team:
+    CDP2000 by joining Roster -> Team (RosterID is unique):
 
         SELECT TeamKey FROM Roster WHERE RosterID = ?
         SELECT TeamKey, Year, TournamentID, FirstName, LastName, Email
           FROM Team WHERE TeamKey = ?
 
-    Returns { user_id: {col: value, ...} } using PLAYER_HEADERS as keys.
-    Userids with no matching roster/team row are simply omitted (blank in xlsx).
+    Returns { user_id: {col: value, ...} } keyed by PLAYER_HEADERS.
+    Userids with no matching roster/team row are omitted (blank in xlsx).
     Only the whitelisted columns above are ever selected.
     """
     details = {}
@@ -121,7 +185,6 @@ def fetch_player_details(user_ids):
     if not CDP2000_DB_CONNECTION_STRING:
         raise RuntimeError("CDP2000_DB_CONNECTION_STRING is not set in .env")
 
-    # Roster.RosterID -> Team, combined into one query per userid.
     query = (
         "SELECT t.TeamKey, t.Year, t.TournamentID, t.FirstName, t.LastName, t.Email "
         "FROM Roster r "
@@ -150,9 +213,15 @@ def fetch_player_details(user_ids):
 def build_workbook_bytes(chat_columns, chat_rows, player_details):
     """
     Build the .xlsx in memory and return the raw bytes.
-    Layout: [player columns] + <all chat columns> + [Review]
+    Layout:
+        [player cols] + <all chat cols> + [Review] + [Topic] + [Information]
     """
-    headers = list(PLAYER_HEADERS) + list(chat_columns) + [REVIEW_COLUMN_HEADER]
+    headers = (
+        list(PLAYER_HEADERS)
+        + list(chat_columns)
+        + [REVIEW_COLUMN_HEADER]
+        + EXTRA_REVIEW_HEADERS
+    )
 
     wb = Workbook()
     ws = wb.active
@@ -180,23 +249,41 @@ def build_workbook_bytes(chat_columns, chat_rows, player_details):
         uid = row[userid_pos] if userid_pos is not None else None
         info = player_details.get(uid, {})
 
-        # Player columns first
+        # Player columns first (cleaned for safety)
         for c_idx, header in enumerate(PLAYER_HEADERS, start=1):
-            ws.cell(row=r_idx, column=c_idx, value=info.get(header))
+            ws.cell(row=r_idx, column=c_idx, value=clean_value(info.get(header), header))
 
-        # Then the original chat columns
+        # Then the original chat columns (cleaned)
         for c_offset, value in enumerate(row):
-            ws.cell(row=r_idx, column=n_player + 1 + c_offset, value=value)
+            col_name = chat_columns[c_offset]
+            ws.cell(
+                row=r_idx,
+                column=n_player + 1 + c_offset,
+                value=clean_value(value, col_name),
+            )
+
+    # Correct / Incorrect dropdown on the Review column for every data row
+    review_col_idx = n_player + len(chat_columns) + 1
+    review_col_letter = ws.cell(row=1, column=review_col_idx).column_letter
+    if chat_rows:
+        dv = DataValidation(
+            type="list",
+            formula1='"Correct,Incorrect"',
+            allow_blank=True,
+        )
+        dv.add(f"{review_col_letter}2:{review_col_letter}{len(chat_rows) + 1}")
+        ws.add_data_validation(dv)
 
     # Column widths
     wide = {"question", "answer", "suggestedanswer"}
+    review_like = {REVIEW_COLUMN_HEADER.lower(), "information"}
     for col_idx, header in enumerate(headers, start=1):
         letter = ws.cell(row=1, column=col_idx).column_letter
         name = header.lower()
         if name in wide:
             ws.column_dimensions[letter].width = 60
-        elif name == REVIEW_COLUMN_HEADER.lower():
-            ws.column_dimensions[letter].width = 22
+        elif name in review_like:
+            ws.column_dimensions[letter].width = 24
         elif name == "email":
             ws.column_dimensions[letter].width = 28
         else:
@@ -216,6 +303,19 @@ def build_workbook_bytes(chat_columns, chat_rows, player_details):
 
 app = FastAPI(title="CDP Chat Review Export", version="1.0")
 
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+def require_api_key(provided: str = Security(api_key_header)):
+    """Reject any request without the correct X-API-Key header."""
+    if not EXPORT_API_KEY:
+        raise HTTPException(
+            status_code=503,
+            detail="Server is missing EXPORT_API_KEY config (set it in .env).",
+        )
+    if provided != EXPORT_API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid or missing X-API-Key.")
+
 
 def _validate_date(value: str, field: str) -> str:
     try:
@@ -232,15 +332,23 @@ def _validate_date(value: str, field: str) -> str:
 def root():
     return {
         "service": "CDP Chat Review Export",
-        "usage": "GET /export-chat?start=YYYY-MM-DD&end=YYYY-MM-DD",
+        "usage": "GET /export-chat?start=YYYY-MM-DD&end=YYYY-MM-DD  (header X-API-Key required)",
         "docs": "/docs",
     }
 
 
-@app.get("/export-chat")
+@app.get("/export-chat", dependencies=[Security(require_api_key)])
 def export_chat(
-    start: str = Query(..., description="Start date (inclusive), YYYY-MM-DD"),
-    end: str = Query(..., description="End date (inclusive), YYYY-MM-DD"),
+    start: str = Query(
+        ...,
+        description="Start date, inclusive. Format: YYYY-MM-DD (e.g. 2026-01-01)",
+        examples=["2026-01-01"],
+    ),
+    end: str = Query(
+        ...,
+        description="End date, inclusive. Format: YYYY-MM-DD (e.g. 2026-05-31)",
+        examples=["2026-05-31"],
+    ),
 ):
     start = _validate_date(start, "start")
     end = _validate_date(end, "end")
@@ -270,7 +378,7 @@ def export_chat(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Excel build failed: {e}")
 
-    filename = f"{OUTPUT_FILE_PREFIX}_{start}_to_{end}.xlsx"
+    filename = f"{OUTPUT_FILE_PREFIX}_{start}_{end}.xlsx"
     return StreamingResponse(
         io.BytesIO(data),
         media_type=(
