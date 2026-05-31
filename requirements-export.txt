@@ -1,0 +1,8 @@
+# Dependencies for the standalone chat-review export API (export_chat_api.py).
+# Kept separate from the main service requirements on purpose.
+#   pip install -r requirements-export.txt
+fastapi==0.115.0
+uvicorn==0.30.6
+pyodbc==5.2.0
+openpyxl==3.1.5
+python-dotenv==1.0.1
