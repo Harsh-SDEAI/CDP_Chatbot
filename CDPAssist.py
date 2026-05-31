@@ -95,7 +95,7 @@ TOURNAMENT_DAY_GUIDE = """TOURNAMENT DAY GUIDE:
 - Day 7: Departure"""
 
 PLAYER_CONTEXT_INSTRUCTIONS = """INSTRUCTIONS FOR USING PLAYER CONTEXT:
-- For any question about the user, their team, schedule, scores, or standings, answer ONLY from the data above. Do not infer, guess, or use outside knowledge.
+- For any question about the user, their team, schedule, scores, standings, registration week, or season, answer ONLY from the data above. Do not infer, guess, or use outside knowledge.
 - When the user asks about games on a specific day, list ONLY the games shown in SCHEDULE for that day. If no games are shown for that day, say they have no games on that day. Do NOT explain why (do not mention elimination, byes, or bracket status).
 - Greet the user by first name ONLY on the first message of a session (when there is no prior conversation history). Otherwise answer without a greeting.
 - The TOURNAMENT DAY GUIDE is for general "what happens on day X" questions only. The player's actual SCHEDULE always takes precedence over the guide."""
@@ -126,28 +126,55 @@ def _format_game_line(game: dict, my_team_key) -> str:
         f"Field {game['Field']} [{game_type}]: {my_team} vs {opp_team} — {outcome}"
     )
 
+def _fmt_date(value) -> str | None:
+    """Format a DB datetime/date as 'Mon DD, YYYY'. None-safe; falls back to str()."""
+    if value is None:
+        return None
+    try:
+        return value.strftime("%b %d, %Y")
+    except Exception:
+        return str(value)
+
 def get_player_context(userid: int) -> str | None:
     """Fetch the player's identity, schedule, and standings and format them
     as a system-prompt context block. Returns None if the user isn't found
     or any DB call fails — caller falls back to the standard RAG flow.
-    """
-    db = None
-    try:
-        db = get_cdp2000_connection()
-        cursor = db.cursor()
 
-        cursor.execute(
-            "SELECT FirstName, LastName, TeamKey FROM Roster WHERE RosterID = ?",
+    Identity + registration details come from UserRegistration in the chat DB
+    (CDPApp), keyed by UserRegistrationId (the chat userid, unique per user).
+    Schedule + standings come from CDP2000, keyed by the TeamKey from that
+    registration (same TeamKey key space across both databases).
+    """
+    chat_db = None
+    cdp = None
+    try:
+        # 1. Identity + registration details from the chat DB (CDPApp).
+        chat_db = get_db_connection()
+        reg_cursor = chat_db.cursor()
+        reg_cursor.execute(
+            "SELECT FirstName, LastName, TeamKey, SeasonYear, TournamentId, "
+            "WeekStartDate, WeekEndDate FROM UserRegistration "
+            "WHERE UserRegistrationId = ?",
             (userid,)
         )
-        row = cursor.fetchone()
+        row = reg_cursor.fetchone()
         if not row:
             return None
         first_name = (row[0] or "").strip().title()
         last_name = (row[1] or "").strip().title()
         team_key = row[2]
+        season_year = row[3]
+        tournament_id = row[4]
+        week_start = _fmt_date(row[5])
+        week_end = _fmt_date(row[6])
         if not team_key:
             return None
+        chat_db.close()
+        chat_db = None
+
+        # 2. Schedule + standings from CDP2000, keyed by TeamKey.
+        cdp = get_cdp2000_connection()
+        cursor = cdp.cursor()
 
         cursor.execute(
             "SELECT Day, DayOfWeek, TimeOfDay, Field, "
@@ -191,6 +218,14 @@ def get_player_context(userid: int) -> str | None:
         lines.append(f"Player: {full_name}" if full_name else "Player: (name not on file)")
         if my_team_name:
             lines.append(f"Team: {my_team_name}")
+        if season_year:
+            lines.append(f"Season: {season_year}")
+        if week_start and week_end:
+            lines.append(f"Tournament week: {week_start} to {week_end}")
+        elif week_start:
+            lines.append(f"Tournament week starts: {week_start}")
+        if tournament_id:
+            lines.append(f"Tournament ID: {tournament_id}")
         lines.append("")
 
         if games:
@@ -217,8 +252,10 @@ def get_player_context(userid: int) -> str | None:
         print(f"[player_context] Error: {e}")
         return None
     finally:
-        if db is not None:
-            db.close()
+        if chat_db is not None:
+            chat_db.close()
+        if cdp is not None:
+            cdp.close()
 
 def get_last_file_index_and_size():
     if not os.path.exists(SAVE_PATH):
