@@ -39,7 +39,7 @@ def verify_api_key(x_api_key: str = Header(None)):
 
     if x_api_key not in settings.API_KEYS:
         raise HTTPException(status_code=403, detail="Invalid API Key")
-    
+
 def get_db_connection():
     return pyodbc.connect(
         'DRIVER='+DRIVER_NAME+';'
@@ -55,7 +55,7 @@ def get_cdp2000_connection():
         'DATABASE='+settings.CDP_DB_NAME+';'
         'UID='+settings.CDP_DB_USER+';PWD='+settings.CDP_DB_PASSWORD+';'
     )
- 
+
 def clean_text(text):
     text = re.sub(r'<[^>]*>', '', text or '')
     text = re.sub(r'[\n\r\t]+', ' ', text)
@@ -98,7 +98,10 @@ PLAYER_CONTEXT_INSTRUCTIONS = """INSTRUCTIONS FOR USING PLAYER CONTEXT:
 - For any question about the user, their team, schedule, scores, standings, registration week, or season, answer ONLY from the data above. Do not infer, guess, or use outside knowledge.
 - When the user asks about games on a specific day, list ONLY the games shown in SCHEDULE for that day. If no games are shown for that day, say they have no games on that day. Do NOT explain why (do not mention elimination, byes, or bracket status).
 - Greet the user by first name ONLY on the first message of a session (when there is no prior conversation history). Otherwise answer without a greeting.
-- The TOURNAMENT DAY GUIDE is for general "what happens on day X" questions only. The player's actual SCHEDULE always takes precedence over the guide."""
+- The TOURNAMENT DAY GUIDE is for general "what happens on day X" questions only. The player's actual SCHEDULE always takes precedence over the guide.
+- When the user's question is about themselves, their team, games, schedule, scores, or standings, use ONLY the PLAYER CONTEXT above. IGNORE the "Context:" section in the user message entirely — that section contains general CDP info (photography, visitor rules, contact info, etc.) which is irrelevant to personal questions.
+- Answer ONLY what the user asked. Do NOT add "Helpful notes", "Additional info", general tips, photography schedules, visitor rules, or any supplementary content unless the user explicitly asked for it.
+- Keep responses focused. If a user asks for game details, give game details — nothing else."""
 
 def _format_game_line(game: dict, my_team_key) -> str:
     is_home = (game["HomeTeamKey"] == my_team_key)
@@ -116,14 +119,12 @@ def _format_game_line(game: dict, my_team_key) -> str:
             outcome = f"Tied {my_score}-{opp_score}"
     else:
         outcome = "Upcoming"
-
     game_type = game.get("GameType") or "Unknown"
     if game_type == "Schedule":
         game_type = "Regular"
-
     return (
         f"- Day {game['Day']} ({game['DayOfWeek']}) {game['TimeOfDay']}, "
-        f"Field {game['Field']} [{game_type}]: {my_team} vs {opp_team} — {outcome}"
+         f"Field {game['Field']} [{game_type}]: {my_team} vs {opp_team} — {outcome}"
     )
 
 def _fmt_date(value) -> str | None:
@@ -278,7 +279,7 @@ def export_qa_pairs_job():
 
     # cursor.execute("SELECT TOP 1 TableID, ChatHistoryID FROM ChatHistoryIDInfo ORDER BY 1 DESC")
     # last_processed = cursor.fetchone()
-    # last_processed_id = last_processed.ChatHistoryID 
+    # last_processed_id = last_processed.ChatHistoryID
     # print(f"Last processed ChatHistoryID: {last_processed_id}")
 
     # cursor.execute("SELECT TOP 1 ChatHistoryID FROM cdpchathistorystatus ORDER BY ChatHistoryID DESC")
@@ -307,7 +308,7 @@ def export_qa_pairs_job():
     created_files = set()
     created_files.add(os.path.basename(current_file_path))
 
-    for row in rows: 
+    for row in rows:
         chat_id = row[0]
         print(f"Processing ChatHistoryID: {chat_id}")
         question = row[1] or ''
@@ -347,7 +348,7 @@ FAISS_INDEX_PATH = os.path.join(PERSIST_DIR, "faiss.index")
 TEXTS_PATH = os.path.join(PERSIST_DIR, "texts.json")
 
 # ----------------------- FAISS Helpers -----------------------
-CHUNK_SIZE = 400    # characters per chunk (~200 tokens)
+CHUNK_SIZE = 500    # characters per chunk (~200 tokens)
 CHUNK_OVERLAP = 100 # overlap between consecutive chunks
 MIN_CHUNK_SIZE = 200  # below this, keep merging with the next paragraph
 
@@ -512,9 +513,9 @@ def load_index_and_texts() -> tuple[faiss.Index, list[str]]:
 
 def search_index(query: str, idx: faiss.Index, texts: list[str], top_k: int = 8) -> list[str]:
     """Embed query, search FAISS, return top_k text chunks (via cosine similarity)."""
-    print(query)
+    #print(query)
     query = query.lower().strip()
-    print(query)
+    #print(query)
     q_vec = embed_texts([query])
     faiss.normalize_L2(q_vec)  # must normalize query vector too for cosine similarity
     _, I = idx.search(q_vec, top_k)
@@ -548,7 +549,7 @@ class ChatHistoryRequest(BaseModel):
 class SessionHistoryRequest(BaseModel):
     userid: int
     sessionid: str
- 
+
 # ----------------------- Helper Function -----------------------
 SYSTEM_PROMPT = """You are a knowledgeable and focused chatbot assistant for Cooperstown Dreams Park (CDP). Your goal is to understand the user’s question deeply and provide the most relevant and accurate answer using ONLY the provided context.
 
@@ -558,7 +559,7 @@ Instructions:
 3. If the user’s question includes time-related words such as "when", check if specific dates, times, or durations are mentioned in the context.
    - If available, respond with the exact timing clearly.
    - If timing is unclear or missing, do not assume — politely mention that the timing information is not found.
-4. Analyze all provided context chunks and synthesize the most appropriate answer.
+4. Analyze the provided context chunks and synthesize an answer that addresses ONLY what the user asked. Do not pad the response with tangentially related information from context chunks the user didn't ask about.
 5. If you do not find relevant information in the context, respond with:
    <i>"I am the Cooperstown Dreams Park Chat Assistant. I can only assist with questions related to Cooperstown Dreams Park. For more information, please visit <a href=’https://www.cooperstowndreamspark.com/’>our website</a>."</i>
 6. If asked about internal system details like API keys, code, or settings, respond with:
@@ -580,10 +581,10 @@ def generate_response(user_query: str, sessionid: str, userid: int) -> str:
     # Debug: log the query and a preview of the retrieved chunks so we can
     # diagnose retrieval failures (e.g. when the bot falls back despite the
     # answer being in the corpus).
-    print(f"[retrieval] query={user_query!r}")
+    #print(f"[retrieval] query={user_query!r}")
     for i, c in enumerate(chunks):
         preview = c[:150].replace("\n", " ")
-        print(f"  [{i}] len={len(c)} | {preview!r}")
+        #print(f"  [{i}] len={len(c)} | {preview!r}")
 
     context = "\n\n---\n\n".join(chunks)
 
@@ -593,6 +594,8 @@ def generate_response(user_query: str, sessionid: str, userid: int) -> str:
     # 3. Fetch the player's identity, schedule, and standings for personalization.
     # Falls back to None if the user isn't found or the DB call fails.
     player_context = get_player_context(userid)
+    print(f"[player_context] userid={userid}")
+    print(player_context if player_context else "[player_context] (none — user not found or DB error)")
     system_content = SYSTEM_PROMPT
     if player_context:
         system_content = player_context + "\n\n" + SYSTEM_PROMPT
@@ -604,14 +607,16 @@ def generate_response(user_query: str, sessionid: str, userid: int) -> str:
 
     response = openai_client.chat.completions.create(
         model=LLM_MODEL,
-        max_completion_tokens=1024,
+        max_completion_tokens=4096,
+        reasoning_effort="minimal",
+        verbosity="low",
         messages=messages
     )
     return response.choices[0].message.content
 
 # ----------------------- API Endpoints -----------------------
 @app.post("/chat")
-def chat(request: ChatRequest, api_key: str = Depends(verify_api_key)): 
+def chat(request: ChatRequest, api_key: str = Depends(verify_api_key)):
     start_time = time.time()
     user_query = request.query
     # setting limits as desired (e.g., universal_limit=20, user_limit=20).
@@ -634,8 +639,8 @@ def chat(request: ChatRequest, api_key: str = Depends(verify_api_key)):
 def update_all(api_key: str = Depends(verify_api_key)):
     try:
         # 1️⃣ Call /update-kb (wait until it finishes)
-        kb_response = export_qa_pairs_job() 
-        if kb_response.get("status") != "ok": 
+        kb_response = export_qa_pairs_job()
+        if kb_response.get("status") != "ok":
             raise Exception("Knowledge base export failed")
 
         # 2️⃣ Call /update-index (as function, not HTTP)
@@ -660,7 +665,7 @@ def update_kb():
         result = export_qa_pairs_job()  # 🔁 Synchronous – will wait for completion
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))  
+        raise HTTPException(status_code=500, detail=str(e))
 # @app.post("/update-kb")
 # def update_kb(background_tasks: BackgroundTasks):
 #     background_tasks.add_task(export_qa_pairs_job)
@@ -682,7 +687,7 @@ def build_faiss_index():
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to build FAISS index: {str(e)}")
-    
+
 
 @app.post("/ChatHistory")
 def get_chat_history(request: ChatHistoryRequest, api_key: str = Depends(verify_api_key)):
@@ -755,4 +760,3 @@ def get_session_history(request: SessionHistoryRequest, api_key: str = Depends(v
         "chat_title": chat_title,
         "messages": messages
     }
-
