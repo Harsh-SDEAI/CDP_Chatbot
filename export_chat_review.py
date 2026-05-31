@@ -43,7 +43,10 @@ DB_USER     = "YOUR_USERNAME"
 DB_PASSWORD = "YOUR_PASSWORD"
 
 # --- Output ---------------------------------------------------
-OUTPUT_FILE = "CDPChatHistory_review.xlsx"
+# The start and end dates are appended automatically, e.g.
+#   CDPChatHistory_review_2026-01-01_to_2026-05-31.xlsx
+OUTPUT_FILE_PREFIX = "CDPChatHistory_review"
+OUTPUT_FILE = f"{OUTPUT_FILE_PREFIX}_{START_DATE}_to_{END_DATE}.xlsx"
 
 # Table and the date column the range is filtered on
 TABLE_NAME  = "CDPChatHistory"
