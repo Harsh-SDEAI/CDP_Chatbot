@@ -65,6 +65,11 @@ def get_connection():
         "DATABASE=" + DB_NAME + ";"
         "UID=" + DB_USER + ";"
         "PWD=" + DB_PASSWORD + ";"
+        # Declares read-only intent. On an Availability Group with read-only
+        # routing this routes us to a read replica; otherwise it is a hint and
+        # does NOT by itself block writes. For real enforcement, grant this
+        # login only db_datareader on the database.
+        "ApplicationIntent=ReadOnly;"
     )
 
 
