@@ -78,6 +78,11 @@ USERID_COLUMN  = "UserRegistrationId"   # chat-side userid (== Roster.RosterID)
 # (these match the Team SELECT list you specified).
 PLAYER_HEADERS = ["TeamKey", "Year", "TournamentID", "FirstName", "LastName", "Email"]
 
+# Userid pulled to the very FRONT (column A) for easy eyeballing against the
+# Roster/Team join. It also still appears in its original spot among the chat
+# columns (since we SELECT * from CDPChatHistory).
+USERID_FRONT_HEADER = "UserRegistrationId"
+
 # Trailing blank review columns
 REVIEW_COLUMN_HEADER = "Review (Correct / Incorrect)"
 EXTRA_REVIEW_HEADERS = ["Topic", "Information"]   # free-text columns for the reviewer
@@ -217,7 +222,8 @@ def build_workbook_bytes(chat_columns, chat_rows, player_details):
         [player cols] + <all chat cols> + [Review] + [Topic] + [Information]
     """
     headers = (
-        list(PLAYER_HEADERS)
+        [USERID_FRONT_HEADER]
+        + list(PLAYER_HEADERS)
         + list(chat_columns)
         + [REVIEW_COLUMN_HEADER]
         + EXTRA_REVIEW_HEADERS
@@ -242,15 +248,19 @@ def build_workbook_bytes(chat_columns, chat_rows, player_details):
     except ValueError:
         userid_pos = None
 
-    n_player = len(PLAYER_HEADERS)
+    # Front block = userid column + player columns
+    n_front = 1 + len(PLAYER_HEADERS)
 
     # Data rows
     for r_idx, row in enumerate(chat_rows, start=2):
         uid = row[userid_pos] if userid_pos is not None else None
         info = player_details.get(uid, {})
 
-        # Player columns first (cleaned for safety)
-        for c_idx, header in enumerate(PLAYER_HEADERS, start=1):
+        # Column A: userid pulled to the front
+        ws.cell(row=r_idx, column=1, value=clean_value(uid, USERID_FRONT_HEADER))
+
+        # Player columns next (cleaned for safety)
+        for c_idx, header in enumerate(PLAYER_HEADERS, start=2):
             ws.cell(row=r_idx, column=c_idx, value=clean_value(info.get(header), header))
 
         # Then the original chat columns (cleaned)
@@ -258,12 +268,12 @@ def build_workbook_bytes(chat_columns, chat_rows, player_details):
             col_name = chat_columns[c_offset]
             ws.cell(
                 row=r_idx,
-                column=n_player + 1 + c_offset,
+                column=n_front + 1 + c_offset,
                 value=clean_value(value, col_name),
             )
 
     # Correct / Incorrect dropdown on the Review column for every data row
-    review_col_idx = n_player + len(chat_columns) + 1
+    review_col_idx = n_front + len(chat_columns) + 1
     review_col_letter = ws.cell(row=1, column=review_col_idx).column_letter
     if chat_rows:
         dv = DataValidation(
