@@ -10,26 +10,21 @@ How QA uses it (once deployed):
     3. Open the GET /export-chat endpoint, enter start + end dates
        (format YYYY-MM-DD), click Execute, then "Download file".
 
-What it does:
-    1. DB1 (chat DB): read ALL columns from CDPChatHistory for the date range.
-    2. DB2 (CDP2000, different server): for each userid, look up the player's
-       team via Roster -> Team:
-            SELECT TeamKey FROM Roster WHERE RosterID = ?
-            SELECT TeamKey, Year, TournamentID, FirstName, LastName, Email
-              FROM Team WHERE TeamKey = ?
-       (combined into a single Roster->Team JOIN inside CDP2000, cached per
-       userid). RosterID == the chat-side UserRegistrationId, and is unique.
-    3. Stream back one .xlsx with those player details in FRONT of the chat
-       columns, plus trailing blank review columns:
+What it does (everything lives in one database, the chat DB / CDPApp):
+    1. Read ALL columns from CDPChatHistory for the date range.
+    2. For each userid, look up registration details from UserRegistration:
+            SELECT FirstName, LastName, SeasonYear, WeekStartDate, WeekEndDate,
+                   EmailId, TournamentId, RosterId, TeamKey
+              FROM UserRegistration WHERE UserRegistrationId = ?
+       (cached per userid). UserRegistrationId is the chat-side userid.
+    3. Stream back one .xlsx with the userid moved to column A, the
+       UserRegistration details next, then the chat columns, plus trailing
+       blank review columns:
             Review (Correct / Incorrect dropdown) | Topic | Information
 
-NOTE on databases: the two databases live on different servers and are queried
-on two separate connections. They are never joined together in one query. The
-only JOIN (Roster->Team) happens entirely inside CDP2000.
-
 NOTE on read-only: this script issues SELECT statements only. For real
-enforcement, give the logins db_datareader and put ApplicationIntent=ReadOnly
-in the connection strings.
+enforcement, give the login db_datareader and put ApplicationIntent=ReadOnly
+in the connection string.
 
 This service is intentionally SEPARATE from the main CDPAssist app. It reads
 its config from a .env file (see .env.example) and imports nothing from the
@@ -64,23 +59,39 @@ load_dotenv()
 # CONFIGURATION
 # ============================================================
 
-# Connection strings + API key come from the .env file (values added manually).
+# Connection string + API key come from the .env file (values added manually).
+# Everything this script needs lives in the chat DB (CDPApp), so only one
+# connection is required.
 CHAT_DB_CONNECTION_STRING = os.getenv("CHAT_DB_CONNECTION_STRING")
-CDP2000_DB_CONNECTION_STRING = os.getenv("CDP2000_DB_CONNECTION_STRING")
 EXPORT_API_KEY = os.getenv("EXPORT_API_KEY")
 
-# DB1 — chat history table
+# Chat history table
 CHAT_TABLE     = "CDPChatHistory"
 DATE_COLUMN    = "CreatedOn"            # column the date range filters on
-USERID_COLUMN  = "UserRegistrationId"   # chat-side userid (== Roster.RosterID)
+USERID_COLUMN  = "UserRegistrationId"   # chat-side userid
 
-# DB2 — player columns put in FRONT of the chat columns, in this order
-# (these match the Team SELECT list you specified).
-PLAYER_HEADERS = ["TeamKey", "Year", "TournamentID", "FirstName", "LastName", "Email"]
+# UserRegistration lookup (same database as the chat history).
+#   USER_TABLE      : table with one row per registration
+#   USER_KEY_COLUMN : column matched against the chat's UserRegistrationId
+#   USERREG_COLUMNS : columns pulled into the FRONT of the sheet, in this order
+#                     (UserRegistrationId itself is excluded here because it is
+#                      already shown as column A).
+USER_TABLE      = "UserRegistration"
+USER_KEY_COLUMN = "UserRegistrationId"
+USERREG_COLUMNS = [
+    "FirstName",
+    "LastName",
+    "SeasonYear",
+    "WeekStartDate",
+    "WeekEndDate",
+    "EmailId",
+    "TournamentId",
+    "RosterId",
+    "TeamKey",
+]
 
-# Userid pulled to the very FRONT (column A) for easy eyeballing against the
-# Roster/Team join. It also still appears in its original spot among the chat
-# columns (since we SELECT * from CDPChatHistory).
+# Userid pulled to the very FRONT (column A), moved out of its original chat
+# position so it appears once.
 USERID_FRONT_HEADER = "UserRegistrationId"
 
 # Trailing blank review columns
@@ -171,40 +182,40 @@ def fetch_chat_rows(start_date: str, end_date: str):
         conn.close()
 
 
-def fetch_player_details(user_ids):
+def fetch_user_details(user_ids):
     """
-    For each distinct userid, look up the player's team/player details from
-    CDP2000 by joining Roster -> Team (RosterID is unique):
+    For each distinct userid, look up registration details from UserRegistration
+    in the same (chat) database:
 
-        SELECT TeamKey FROM Roster WHERE RosterID = ?
-        SELECT TeamKey, Year, TournamentID, FirstName, LastName, Email
-          FROM Team WHERE TeamKey = ?
+        SELECT FirstName, LastName, SeasonYear, WeekStartDate, WeekEndDate,
+               EmailId, TournamentId, RosterId, TeamKey
+          FROM UserRegistration
+         WHERE UserRegistrationId = ?
 
-    Returns { user_id: {col: value, ...} } keyed by PLAYER_HEADERS.
-    Userids with no matching roster/team row are omitted (blank in xlsx).
+    Returns { user_id: {col: value, ...} } keyed by USERREG_COLUMNS.
+    Userids with no matching registration row are omitted (blank in xlsx).
     Only the whitelisted columns above are ever selected.
     """
     details = {}
     if not user_ids:
         return details
-    if not CDP2000_DB_CONNECTION_STRING:
-        raise RuntimeError("CDP2000_DB_CONNECTION_STRING is not set in .env")
+    if not CHAT_DB_CONNECTION_STRING:
+        raise RuntimeError("CHAT_DB_CONNECTION_STRING is not set in .env")
 
+    select_list = ", ".join(USERREG_COLUMNS)
     query = (
-        "SELECT t.TeamKey, t.Year, t.TournamentID, t.FirstName, t.LastName, t.Email "
-        "FROM Roster r "
-        "INNER JOIN Team t ON r.TeamKey = t.TeamKey "
-        "WHERE r.RosterID = ?"
+        f"SELECT {select_list} FROM {USER_TABLE} "
+        f"WHERE {USER_KEY_COLUMN} = ?"
     )
 
-    conn = pyodbc.connect(CDP2000_DB_CONNECTION_STRING)
+    conn = pyodbc.connect(CHAT_DB_CONNECTION_STRING)
     try:
         cursor = conn.cursor()
         for uid in user_ids:
             cursor.execute(query, (uid,))
             row = cursor.fetchone()
             if row is not None:
-                details[uid] = dict(zip(PLAYER_HEADERS, row))
+                details[uid] = dict(zip(USERREG_COLUMNS, row))
         return details
     finally:
         conn.close()
@@ -215,11 +226,11 @@ def fetch_player_details(user_ids):
 # ============================================================
 
 
-def build_workbook_bytes(chat_columns, chat_rows, player_details):
+def build_workbook_bytes(chat_columns, chat_rows, user_details):
     """
     Build the .xlsx in memory and return the raw bytes.
     Layout:
-        [UserRegistrationId] + [player cols] + <chat cols, userid MOVED out>
+        [UserRegistrationId] + [UserRegistration cols] + <chat cols, userid MOVED out>
         + [Review] + [Topic] + [Information]
     The userid is moved (not duplicated) from its original chat position to
     column A; every other chat column keeps its order.
@@ -238,7 +249,7 @@ def build_workbook_bytes(chat_columns, chat_rows, player_details):
 
     headers = (
         [USERID_FRONT_HEADER]
-        + list(PLAYER_HEADERS)
+        + list(USERREG_COLUMNS)
         + [name for _, name in display_chat]
         + [REVIEW_COLUMN_HEADER]
         + EXTRA_REVIEW_HEADERS
@@ -257,19 +268,19 @@ def build_workbook_bytes(chat_columns, chat_rows, player_details):
         cell.fill = header_fill
         cell.alignment = Alignment(vertical="center", wrap_text=True)
 
-    # Front block = userid column + player columns
-    n_front = 1 + len(PLAYER_HEADERS)
+    # Front block = userid column + UserRegistration columns
+    n_front = 1 + len(USERREG_COLUMNS)
 
     # Data rows
     for r_idx, row in enumerate(chat_rows, start=2):
         uid = row[userid_pos] if userid_pos is not None else None
-        info = player_details.get(uid, {})
+        info = user_details.get(uid, {})
 
         # Column A: userid moved to the front
         ws.cell(row=r_idx, column=1, value=clean_value(uid, USERID_FRONT_HEADER))
 
-        # Player columns next (cleaned for safety)
-        for c_idx, header in enumerate(PLAYER_HEADERS, start=2):
+        # UserRegistration columns next (cleaned for safety)
+        for c_idx, header in enumerate(USERREG_COLUMNS, start=2):
             ws.cell(row=r_idx, column=c_idx, value=clean_value(info.get(header), header))
 
         # Then the remaining chat columns (userid already moved out), cleaned
@@ -302,7 +313,7 @@ def build_workbook_bytes(chat_columns, chat_rows, player_details):
             ws.column_dimensions[letter].width = 60
         elif name in review_like:
             ws.column_dimensions[letter].width = 24
-        elif name == "email":
+        elif name in ("emailid", "email"):
             ws.column_dimensions[letter].width = 28
         else:
             ws.column_dimensions[letter].width = 18
@@ -379,20 +390,20 @@ def export_chat(
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Chat DB read failed: {e}")
 
-    # 2. Player details for the distinct userids we actually saw
+    # 2. UserRegistration details for the distinct userids we actually saw
     user_ids = set()
     if USERID_COLUMN in chat_columns:
         pos = list(chat_columns).index(USERID_COLUMN)
         user_ids = {r[pos] for r in chat_rows if r[pos] is not None}
 
     try:
-        player_details = fetch_player_details(user_ids)
+        user_details = fetch_user_details(user_ids)
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"CDP2000 DB read failed: {e}")
+        raise HTTPException(status_code=502, detail=f"UserRegistration read failed: {e}")
 
     # 3. Build the workbook
     try:
-        data = build_workbook_bytes(chat_columns, chat_rows, player_details)
+        data = build_workbook_bytes(chat_columns, chat_rows, user_details)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Excel build failed: {e}")
 
