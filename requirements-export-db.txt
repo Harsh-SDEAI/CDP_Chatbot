@@ -1,0 +1,6 @@
+# Dependencies for the database export script (export_chat_to_db.py).
+# Writes CDPChatHistory review data into the CDPChatReview table instead of an
+# Excel file. Kept separate from the other requirements on purpose.
+#   pip install -r requirements-export-db.txt
+pyodbc==5.2.0
+python-dotenv==1.0.1
