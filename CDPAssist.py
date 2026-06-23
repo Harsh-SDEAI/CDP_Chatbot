@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, Header
+from datetime import datetime, date
 import re
 import json
 from pydantic import BaseModel
@@ -101,7 +102,8 @@ PLAYER_CONTEXT_INSTRUCTIONS = """INSTRUCTIONS FOR USING PLAYER CONTEXT:
 - The TOURNAMENT DAY GUIDE is for general "what happens on day X" questions only. The player's actual SCHEDULE always takes precedence over the guide.
 - When the user's question is about themselves, their team, games, schedule, scores, or standings, use ONLY the PLAYER CONTEXT above. IGNORE the "Context:" section in the user message entirely — that section contains general CDP info (photography, visitor rules, contact info, etc.) which is irrelevant to personal questions.
 - Answer ONLY what the user asked. Do NOT add "Helpful notes", "Additional info", general tips, photography schedules, visitor rules, or any supplementary content unless the user explicitly asked for it.
-- Keep responses focused. If a user asks for game details, give game details — nothing else."""
+- Keep responses focused. If a user asks for game details, give game details — nothing else.
+- When the user uses a relative time word (today, tonight, this morning, tomorrow, yesterday), first convert it to the specific Tournament Day using "Today is Tournament Day N" shown above, then answer for that day using the correct source (the player's SCHEDULE for games, the Context section for meals and menus)."""
 
 def _format_game_line(game: dict, my_team_key) -> str:
     is_home = (game["HomeTeamKey"] == my_team_key)
@@ -136,7 +138,29 @@ def _fmt_date(value) -> str | None:
     except Exception:
         return str(value)
 
-def get_player_context(userid: int) -> str | None:
+def _as_date(value):
+    """Coerce a DB date/datetime value to a plain date. None-safe."""
+    if value is None:
+        return None
+    return value.date() if isinstance(value, datetime) else value
+
+def _tournament_day_line(week_start_raw, week_end_raw, today: date) -> str | None:
+    """Return a human-readable line describing today's position in the tournament week.
+    Returns None when either date is missing so the caller can skip injection safely.
+    """
+    ws = _as_date(week_start_raw)
+    we = _as_date(week_end_raw)
+    if ws is None or we is None:
+        return None
+    if today < ws:
+        days_away = (ws - today).days
+        return f"Tournament has not started yet. Day 1 is {_fmt_date(ws)} ({days_away} day(s) away)."
+    if today > we:
+        return f"Tournament has ended. It ran {_fmt_date(ws)} to {_fmt_date(we)}."
+    day_number = (today - ws).days + 1
+    return f"Today is Tournament Day {day_number}."
+
+def get_player_context(userid: int, today: date | None = None) -> str | None:
     """Fetch the player's identity, schedule, and standings and format them
     as a system-prompt context block. Returns None if the user isn't found
     or any DB call fails — caller falls back to the standard RAG flow.
@@ -166,8 +190,10 @@ def get_player_context(userid: int) -> str | None:
         team_key = row[2]
         season_year = row[3]
         tournament_id = row[4]
-        week_start = _fmt_date(row[5])
-        week_end = _fmt_date(row[6])
+        week_start_raw = row[5]
+        week_end_raw = row[6]
+        week_start = _fmt_date(week_start_raw)
+        week_end = _fmt_date(week_end_raw)
         if not team_key:
             return None
         chat_db.close()
@@ -225,6 +251,10 @@ def get_player_context(userid: int) -> str | None:
             lines.append(f"Tournament week: {week_start} to {week_end}")
         elif week_start:
             lines.append(f"Tournament week starts: {week_start}")
+        if today is not None:
+            day_line = _tournament_day_line(week_start_raw, week_end_raw, today)
+            if day_line:
+                lines.append(day_line)
         if tournament_id:
             lines.append(f"Tournament ID: {tournament_id}")
         lines.append("")
@@ -591,16 +621,22 @@ def generate_response(user_query: str, sessionid: str, userid: int) -> str:
     # 2. Fetch prior turns from this session for follow-up question support
     history = get_conversation_history(userid, sessionid, limit=settings.USER_LIMIT)
 
-    # 3. Fetch the player's identity, schedule, and standings for personalization.
+    # 3. Compute today's date once so it's consistent across player_context + system prompt.
+    now = datetime.now()
+    today = now.date()
+    date_context = f"Today is {now.strftime('%A, %b %d, %Y')}."
+
+    # 4. Fetch the player's identity, schedule, and standings for personalization.
     # Falls back to None if the user isn't found or the DB call fails.
-    player_context = get_player_context(userid)
+    player_context = get_player_context(userid, today)
     print(f"[player_context] userid={userid}")
     print(player_context if player_context else "[player_context] (none — user not found or DB error)")
-    system_content = SYSTEM_PROMPT
     if player_context:
-        system_content = player_context + "\n\n" + SYSTEM_PROMPT
+        system_content = date_context + "\n\n" + player_context + "\n\n" + SYSTEM_PROMPT
+    else:
+        system_content = date_context + "\n\n" + SYSTEM_PROMPT
 
-    # 4. Build messages: system → prior turns → current question with context
+    # 5. Build messages: system → prior turns → current question with context
     messages = [{"role": "system", "content": system_content}]
     messages.extend(history)
     messages.append({"role": "user", "content": f"Context:\n{context}\n\nUser question: {user_query}"})
