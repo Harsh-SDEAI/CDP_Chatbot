@@ -1,0 +1,44 @@
+Here is the schedule for the Snack Shacks in statement form:
+
+1. The Village snack shack operates:
+   - Day 1: 2:30 PM - 10:30 PM  
+   - Day 2: 1 PM - 10:30 PM  
+   - Day 3 to Day 5: 11 AM - 10:30 PM  
+   - Day 6: 11 AM - 5 PM  
+
+2. Snack shack 1 operates:
+   - Day 1: 2 PM - 10 PM  
+   - Day 2 to Day 5: 8:30 AM - Closing  
+   - Day 6: 8:30 AM - Closing  
+
+3. Snack shack 2 operates:
+   - Day 1: Closed  
+   - Day 2: 7:30 AM - closing	
+   - Day 3 to Day 5: 8:30 AM - Closing  
+   - Day 6: Closed  
+
+4. Snack shack 3 operates:
+   - Day 1: Closed  
+   - Day 2: 3 PM - Closing  
+   - Day 3 to Day 5: 8:30 AM - Closing  
+   - Day 6: 8:30 AM - Closing  
+
+5. Snack shack 4 operates:
+   - Day 1: Closed  
+   - Day 2: 3 PM - Closing  
+   - Day 3 to Day 5: 8:30 AM - Closing  
+   - Day 6: Closed  
+
+6. Snack shack 5 operates:
+   - Day 1: Closed  
+   - Day 2: 3 PM - Closing  
+   - Day 3 to Day 5: 8:30 AM - Closing  
+   - Day 6: Closed  
+
+7. Snack shack 6 operates:
+   - Day 1: Closed  
+   - Day 2: 3 PM - Closing  
+   - Day 3 to Day 5: 8:30 AM - Closing  
+   - Day 6: Closed  
+
+

@@ -1,0 +1,122 @@
+Cooperstown dreams park organizes 15 tournament a year following is the list of 15 tournaments from 2026 with all details.
+
+
+Tournament Year: 2026
+Tournament ID: 354
+Tournament Number: 1
+Week Date: May 31
+Start Date: 2026-05-31
+End Date: 2026-06-06
+Month: May
+-----------------------------
+Tournament Year: 2026
+Tournament ID: 355
+Tournament Number: 2
+Week Date: Jun 06
+Start Date: 2026-06-06
+End Date: 2026-06-12
+Month: June
+-----------------------------
+Tournament Year: 2026
+Tournament ID: 356
+Tournament Number: 3
+Week Date: Jun 12
+Start Date: 2026-06-12
+End Date: 2026-06-18
+Month: June
+-----------------------------
+Tournament Year: 2026
+Tournament ID: 357
+Tournament Number: 4
+Week Date: Jun 18
+Start Date: 2026-06-18
+End Date: 2026-06-24
+Month: June
+-----------------------------
+Tournament Year: 2026
+Tournament ID: 358
+Tournament Number: 5
+Week Date: Jun 24
+Start Date: 2026-06-24
+End Date: 2026-06-30
+Month: June
+-----------------------------
+Tournament Year: 2026
+Tournament ID: 359
+Tournament Number: 6
+Week Date: Jun 30
+Start Date: 2026-06-30
+End Date: 2026-07-06
+Month: June
+-----------------------------
+Tournament Year: 2026
+Tournament ID: 360
+Tournament Number: 7
+Week Date: Jul 06
+Start Date: 2026-07-06
+End Date: 2026-07-12
+Month: July
+-----------------------------
+Tournament Year: 2026
+Tournament ID: 361
+Tournament Number: 8
+Week Date: Jul 12
+Start Date: 2026-07-12
+End Date: 2026-07-18
+Month: July
+-----------------------------
+Tournament Year: 2026
+Tournament ID: 362
+Tournament Number: 9
+Week Date: Jul 18
+Start Date: 2026-07-18
+End Date: 2026-07-24
+Month: July
+-----------------------------
+Tournament Year: 2026
+Tournament ID: 363
+Tournament Number: 10
+Week Date: Jul 24
+Start Date: 2026-07-24
+End Date: 2026-07-30
+Month: July
+-----------------------------
+Tournament Year: 2026
+Tournament ID: 364
+Tournament Number: 11
+Week Date: Jul 30
+Start Date: 2026-07-30
+End Date: 2026-08-05
+Month: July
+-----------------------------
+Tournament Year: 2026
+Tournament ID: 365
+Tournament Number: 12
+Week Date: Aug 05
+Start Date: 2026-08-05
+End Date: 2026-08-11
+Month: August
+-----------------------------
+Tournament Year: 2026
+Tournament ID: 366
+Tournament Number: 13
+Week Date: Aug 11
+Start Date: 2026-08-11
+End Date: 2026-08-17
+Month: August
+-----------------------------
+Tournament Year: 2026
+Tournament ID: 367
+Tournament Number: 14
+Week Date: Aug 17
+Start Date: 2026-08-17
+End Date: 2026-08-23
+Month: August
+-----------------------------
+Tournament Year: 2026
+Tournament ID: 368
+Tournament Number: 15
+Week Date: Aug 23
+Start Date: 2026-08-23
+End Date: 2026-08-29
+Month: August
